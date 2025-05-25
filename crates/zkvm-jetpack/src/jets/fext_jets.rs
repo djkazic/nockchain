@@ -7,7 +7,7 @@ use tracing::debug;
 use crate::form::fext::*;
 use crate::form::poly::*;
 use crate::hand::handle::new_handle_mut_felt;
-use crate::jets::utils::jet_err;
+use crate::jets::utils::{noun_to_vec_belt, vec_belt_to_noun, jet_err};
 use crate::noun::noun_ext::NounExt;
 use crate::utils::*;
 
@@ -118,4 +118,63 @@ pub fn fpow_jet(context: &mut Context, subject: Noun) -> Result<Noun, JetErr> {
 
     assert!(felt_atom_is_valid(res_atom));
     Ok(res_atom.as_noun())
+}
+
+pub fn fp_fft_jet(ctx: &mut Context, subject: Noun) -> Result<Noun, JetErr> {
+    // 1) decode the Hoon list into Vec<Belt>
+    let mut coeffs = match noun_to_vec_belt(subject) {
+      Ok(v) => v,
+      Err(_) => return jet_err(),
+    };
+    let n = coeffs.len();
+
+    // 2) must be non-empty and a power of two
+    if n == 0 || !n.is_power_of_two() {
+        return jet_err();
+    }
+
+    // 3) compute the “lifted” root for size `n`
+    let root = match Belt(n as u64).ordered_root() {
+      Ok(r) => r,
+      Err(_) => return jet_err(),
+    };
+
+    // 4a) bit-reverse permutation
+    let mut j = 0;
+    for i in 1..n {
+        let mut bit = n >> 1;
+        while j & bit != 0 {
+            j ^= bit;
+            bit >>= 1;
+        }
+        j |= bit;
+        if i < j {
+            coeffs.swap(i, j);
+        }
+    }
+
+    // 4b) Danielson–Lanczos butterflies
+    let mut len = 2;
+    while len <= n {
+        let half = len / 2;
+        // twiddle step = Belt(root.0.pow(expo))
+        let expo: u32 = (n / len) as u32;
+        let step = Belt(root.0.pow(expo));
+
+        for chunk in coeffs.chunks_exact_mut(len) {
+            let mut w = Belt::one();
+            for i in 0..half {
+                let u = chunk[i];
+                let t = chunk[i + half] * w;
+                chunk[i]        = u + t;
+                chunk[i + half] = u - t;
+                w = w * step;
+            }
+        }
+
+        len <<= 1;
+    }
+
+    // 5) pack back into a Hoon list and return
+    Ok(vec_belt_to_noun(ctx, &coeffs))
 }

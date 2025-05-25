@@ -9,6 +9,7 @@ use crate::jets::fext_jets::*;
 use crate::jets::mary_jets::*;
 use crate::jets::tip5_jets::*;
 use crate::jets::verifier_jets::*;
+use crate::jets::fext_jets::fp_fft_jet;
 
 pub fn produce_prover_hot_state() -> Vec<HotEntry> {
     let mut jets: Vec<HotEntry> = Vec::new();
@@ -201,6 +202,21 @@ pub const EXTENSION_FIELD_JETS: &[HotEntry] = &[
         ],
         1,
         fpow_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fp-fft"),
+        ],
+        1,
+        fp_fft_jet,
     ),
 ];
 
