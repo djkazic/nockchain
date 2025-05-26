@@ -920,7 +920,7 @@
         ::~&  >  'generation of candidate blocks enabled.'
         =.  m.k  (set-mining:min p.command)
         =.  m.k  (heard-new-block:min c.k p.k now)
-        `k
+        (do-mine (hash-noun-varlen:tip5:zeke [%nonce eny]))
       ::
       ++  do-timer
         ::TODO post-dumbnet: only rerequest transactions a max of once/twice (maybe an admin param)
