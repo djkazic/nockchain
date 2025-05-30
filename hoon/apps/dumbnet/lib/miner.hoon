@@ -60,7 +60,7 @@
     %^  cat  3
       'candidate block timestamp updated: '
     (scot %$ timestamp.candidate-block.m)
-  ~>  %slog.[0 [%leaf print-var]]
+  :: ~>  %slog.[0 [%leaf print-var]]
   m
 ::
 ::  +heard-new-tx: potentially changes candidate block in reaction to a raw-tx
