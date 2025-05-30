@@ -189,6 +189,33 @@ pub fn bp_fft_jet(context: &mut Context, subject: Noun) -> Result {
     Ok(res_cell)
 }
 
+pub fn bp_ifft_jet(context: &mut Context, subject: Noun) -> Result {
+    let p = slot(subject, 6)?;
+
+    let Ok(p_poly) = BPolySlice::try_from(p) else {
+        return jet_err();
+    };
+    let order_atom = Atom::new(&mut context.stack, p_poly.len() as u64);
+    let Ok(order_belt) = order_atom.as_belt() else {
+        return jet_err();
+    };
+    let Ok(root_belt) = order_belt.ordered_root() else {
+        return jet_err();
+    };
+    let inv_root_belt = root_belt.inv();
+    let Ok(returned_bpoly) = bp_ifft(p_poly.0, &inv_root_belt) else {
+        return jet_err();
+    };
+    let (res_atom, res_poly): (IndirectAtom, &mut [Belt]) =
+        new_handle_mut_slice(&mut context.stack, Some(returned_bpoly.len()));
+
+    res_poly.copy_from_slice(&returned_bpoly);
+
+    let res_cell: Noun = finalize_poly(&mut context.stack, Some(res_poly.len()), res_atom);
+
+    Ok(res_cell)
+}
+
 pub fn bp_shift_jet(context: &mut Context, subject: Noun) -> Result {
     let sam = slot(subject, 6)?;
     let bp = slot(sam, 2)?;
