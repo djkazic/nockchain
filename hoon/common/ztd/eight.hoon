@@ -111,16 +111,20 @@
   ::  convert the ext columns to marys
   ::
   ::  think of each mary as a list of the table's columns, interpolated to polynomials
+  :: ~&  "compute-cw-commit: convert-ext-to-marys"
   =/  table-polys=(list mary)
     (compute-table-polys table-marys)
   ::
   ::  this mary is a list of all tables' columns, extended to codewords
+  :: ~&  "compute-cw-commit: compute-lde"
   =/  codewords=mary
     (compute-lde table-polys fri-domain-len total-cols)
   ::
   ::  this mary is a list of rows, each row the values of above codewords at a fixed domain elt
+  :: ~&  "compute-cw-commit: transpose-bpolys"
   =/  codeword-array=mary
     (transpose-bpolys codewords)
+  ~&  "compute-cw-commitments: building merkle"
   =/  merk-heap=(pair @ merk-heap:merkle)
     (bp-build-merk-heap:merkle codeword-array)
   [table-polys codeword-array merk-heap]
@@ -256,6 +260,7 @@
           is-extra=?
       ==
   ^-  bpoly
+  ~&  "compute-composition-poly: entry"
   (do-compute-composition-poly +<)
 ::
 ++  do-compute-composition-poly
@@ -271,6 +276,7 @@
           is-extra=?
       ==
   ^-  bpoly
+  ~&  "do-compute-composition-poly: entry"
   =/  max-height=@
     %-  bex  %-  xeb  %-  dec
     (roll heights max)
@@ -278,8 +284,10 @@
   |^
   =/  boundary-zerofier  (init-bpoly ~[(bneg 1) 1])          ::  f(X)=X-1
   ::
+  ~&  "do-compute-composition-poly: starting outer loop"
   %+  roll  (range len.omicrons)
   |=  [i=@ acc=_zero-bpoly]
+  ~&  "do-compute-composition-poly: processing table"
   =/  height=@  (snag i heights)
   =/  omicron  (~(snag bop omicrons) i)
   =/  last-row  (init-bpoly ~[(bneg (binv omicron)) 1])      ::  f(X)=X-g^{-1}
@@ -292,9 +300,11 @@
   =/  row-zerofier                                           ::  f(X) = (X^N-1)
     (bpsub (bppow id-bpoly height) one-bpoly)
   ::
+  ~&  "do-compute-composition-poly: calculating terms for table"
   ;:  bpadd
     acc
   ::
+  ~&  "do-compute-composition-poly: bpdiv1"
     %-  bpdiv
     :_  boundary-zerofier
     %-  process-composition-constraints
@@ -304,6 +314,7 @@
         dyns
     ==
   ::
+  ~&  "do-compute-composition-poly: bpdiv2"
     %-  bpdiv
     :_  row-zerofier
     %-  process-composition-constraints
@@ -317,6 +328,7 @@
         dyns
     ==
   ::
+  ~&  "do-compute-composition-poly: bpdiv3"
     %-  bpdiv
     ::  note: the transition zerofier = row-zerofier/last-row
     ::  here, we are computing composition-constraints/transition-zerofier
@@ -333,6 +345,7 @@
         dyns
     ==
   ::
+  ~&  "do-compute-composition-poly: bpdiv4"
     %-  bpdiv
     :_  last-row
     %-  process-composition-constraints
