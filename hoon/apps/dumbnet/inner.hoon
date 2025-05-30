@@ -683,7 +683,7 @@
     ++  handle-command
       |=  [now=@da =command:dk]
       ^-  [(list effect:dk) kernel-state:dk]
-      ~>  %slog.[3 (cat 3 'command: ' -.command)]
+      :: ~>  %slog.[0 (cat 3 'command: ' -.command)]
       ::  ~&  "handling command: {<-.command>}"
       ?:  &(?=(init-only-command:dk -.command) !init.a.k)
         ::  kernel no longer in init phase, can't do init-only command
@@ -820,30 +820,33 @@
       ::
       ++  do-enable-mining
         ^-  [(list effect:dk) kernel-state:dk]
+        ~&  "do-enable-mining called"
         ?>  ?=([%enable-mining *] command)
         ?.  p.command
-          ::~&  >  'generation of candidate blocks disabled'
+          :: ~&  >  'generation of candidate blocks disabled'
           =.  m.k  (set-mining:min p.command)
           `k
         ?:  =(*(z-set lock:t) pubkeys.m.k)
-          ::  ~&  >
-          ::      """
-          ::      generation of candidate blocks has not been enabled because mining pubkey
-          ::      is empty. set it with %set-mining-key then run %enable-mining again
-          ::      """
+           ~&  >
+               """
+               generation of candidate blocks has not been enabled because mining pubkey
+               is empty. set it with %set-mining-key then run %enable-mining again
+               """
           `k
         ?:  =(~ heaviest-block.c.k)
-          ::~&  >
-          ::    """
-          ::    generation of candidate blocks enabled. candidate block will be generated
-          ::    once a genesis block has been received.
-          ::    """
+          ~&  >
+             """
+             generation of candidate blocks enabled. mining ON.
+             """
           =.  m.k  (set-mining:min p.command)
-          `k
-        ::~&  >  'generation of candidate blocks enabled.'
+          :: `k
+          :: kick off mining immediately
+          (do-mine (hash-noun-varlen:tip5:zeke [%nonce eny]))
+        ~&  >  'generation of candidate blocks enabled.'
         =.  m.k  (set-mining:min p.command)
         =.  m.k  (heard-new-block:min c.k p.k now)
-        `k
+        :: `k
+        (do-mine (hash-noun-varlen:tip5:zeke [%nonce eny]))
       ::
       ++  do-timer
         ::TODO post-dumbnet: only rerequest transactions a max of once/twice (maybe an admin param)
@@ -872,14 +875,18 @@
         ::  generate genesis block and sets it as candidate block
         ^-  [(list effect:dk) kernel-state:dk]
         ?>  ?=([%genesis *] command)
+        ~>  %slog.[0 leaf+"do-genesis: command received"]
         ::  creating genesis block with template
         ~>  %slog.[0 leaf+"create genesis block with template"]
         =/  =genesis-template:t
           (new:genesis-template:t p.command)
+        ~>  %slog.[0 leaf+"do-genesis: genesis template created"]
         =/  genesis-page=page:t
           (new-genesis:page:t genesis-template now)
         =.  candidate-block.m.k  genesis-page
+        ~>  %slog.[0 leaf+"do-genesis: candidate block set to genesis block"]
         =.  c.k  (add-btc-data:con `btc-hash.p.command)
+        ~>  %slog.[0 leaf+"do-genesis: BTC data added."]
         `k
       ::
       ++  do-btc-data
@@ -892,7 +899,7 @@
     ++  handle-fact
       |=  [wir=wire eny=@ our=@ux now=@da =fact:dk]
       ^-  [(list effect:dk) kernel-state:dk]
-      ~>  %slog.[3 (cat 3 'fact: ' +<.fact)]
+      ~>  %slog.[0 (cat 3 'fact: ' +<.fact)]
       ?:  init.a.k
         ::  kernel in init phase, fact ignored
         `k
@@ -909,11 +916,12 @@
       ::
       ++  do-mine
         |=  nonce=noun-digest:tip5:zeke
+        ~&  "do-mine called"
         ^-  [(list effect:dk) kernel-state:dk]
         ?.  mining.m.k
           `k
         ?:  =(*(z-set lock:t) pubkeys.m.k)
-          ::~&  "cannot mine without first setting pubkey with %set-mining-key"
+          ~&  "cannot mine without first setting pubkey with %set-mining-key"
           `k
         =/  commit=block-commitment:t
           (block-commitment:page:t candidate-block.m.k)
