@@ -54,7 +54,8 @@
   =.  proof  (~(push proof-stream proof) [%puzzle header nonce pow-len prod])
   ::
   ::  build tables
-  ::~&  %building-tables
+  :: ~&  %building-tables
+  ~&  "generate-proof: building-tables"
   =/  tables=(list table-dat)
     (build-table-dats return override)
   ::
@@ -89,6 +90,7 @@
     %^  spin  tables
       0
     |=([t=table-dat width=@] [p.p.t (add width base-width.p.t)])
+  ~&  "generate-proof: compute-cw-commit-1"
   =/  base=codeword-commitments
     (compute-codeword-commitments base-marys fri-domain-len width)
   =.  proof  (~(push proof-stream proof) [%m-root h.q.merk-heap.base])
@@ -133,6 +135,7 @@
       0
     |=([t=table-mary width=@] [p.t (add width ext-width.t)])
   ::
+  ~&  "generate-proof: compute-cw-commit-2"
   =/  ext=codeword-commitments
     (compute-codeword-commitments ext-marys fri-domain-len width)
   =.  proof  (~(push proof-stream proof) [%m-root h.q.merk-heap.ext])
@@ -174,6 +177,7 @@
       0
     |=  [t=table-mary width=@]
     [p.t (add width mega-ext-width.t)]
+  ~&  "generate-proof: compute-cw-commit-3"
   =/  mega-ext=codeword-commitments
     (compute-codeword-commitments mega-ext-marys fri-domain-len width)
   ::
@@ -280,6 +284,7 @@
   =/  max-height=@
     %-  bex  %-  xeb  %-  dec
     (roll heights max)
+  ~&  "generate-proof: precompute-ntts"
   =/  tworow-trace-polys-eval=(list bpoly)
     %+  iturn  tworow-trace-polys
     |=  [i=@ polys=mary]
@@ -314,6 +319,7 @@
     :_  (add num (mul 2 num-extra-constraints))
     [[i (~(swag bop extra-comp-weights) num (mul 2 num-extra-constraints))] acc]
   ::~&  %computing-extra-composition-poly
+  ~&  "generate-proof: compute-extra-comp-poly"
   =/  extra-composition-poly=bpoly
     %-  compute-composition-poly
     :*  omicrons-bpoly
@@ -333,6 +339,7 @@
   ::
   ::  compute extra trace evals
   ::~&  %evaluating-trace-at-new-comp-eval-point
+  ~&  "generate-proof: eval-trace-new-comp-eval-pt"
   =/  extra-trace-evaluations=fpoly
     %-  init-fpoly
     %-  zing
@@ -389,6 +396,7 @@
     [[i (~(swag bop comp-weights) num (mul 2 num-constraints))] acc]
   ::
   ::~&  %computing-composition-poly
+  ~&  "generate-proof: compute-comp-poly"
   =/  composition-poly=bpoly
     %-  compute-composition-poly
     :*  omicrons-bpoly
@@ -406,6 +414,7 @@
   ::  constraints. If the max degree of the constraints is D, then this will produce
   ::  D polynomials each of degree table-height.
   ::~&  %decomposing-composition-poly
+  ~&  "generate-proof: decomp-comp-poly"
   =/  num-composition-pieces  (get-max-constraint-degree cd.pre)
   ::
   =/  composition-pieces=(list bpoly)
@@ -413,6 +422,7 @@
   ::
   ::  turn composition pieces into codewords
   ::~&  %computing-composition-codewords
+  ~&  "generate-proof: compute-comp-cw"
   =/  composition-codewords=mary
     %-  zing-bpolys
     %+  turn  composition-pieces
@@ -546,6 +556,7 @@
     m-pathbf+[(tail elem) path.opening]
   ::
   ::~&  %finished-proof
+  ~&  "generate-proof: finished-proof"
   [%& %0 objects.proof ~ 0]
 ::
 ::
