@@ -214,6 +214,22 @@ pub fn bp_fft(bp: &[Belt]) -> Result<Vec<Belt>, FieldError> {
     Ok(bp_ntt(bp, &root))
 }
 
+#[inline(always)]
+pub fn bp_ifft(bp: &[Belt], root: &Belt) -> Result<Vec<Belt>, FieldError> {
+    let n = bp.len() as u64;
+    if n == 0 {
+        return Ok(vec![]);
+    }
+    let inv_root = root.inv();
+    let mut result = bp_ntt(bp, &inv_root);
+    let n_belt = Belt(n);
+    let n_inv = n_belt.inv();
+    for coeff in result.iter_mut() {
+        *coeff = *coeff * n_inv;
+    }
+    Ok(result)
+}
+
 pub fn bp_ntt(bp: &[Belt], root: &Belt) -> Vec<Belt> {
     let n = bp.len() as u32;
 
