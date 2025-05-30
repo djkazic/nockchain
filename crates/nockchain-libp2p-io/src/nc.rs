@@ -332,7 +332,7 @@ pub fn make_libp2p_driver(
                             if initial_peer_retries_remaining > 0 {
                                 // info!("Failed to bootstrap: {}", NoKnownPeers());
                                 initial_peer_retries_remaining -= 1;
-                                dial_initial_peers(&mut swarm, &initial_peers)?;
+                                dial_peers(&mut swarm, &initial_peers)?;
                             }
                             // else {
                             //     warn!("Failed to bootstrap after {} retries, will not attempt to redial initial peers.", INITIAL_PEER_RETRIES);
