@@ -330,12 +330,13 @@ pub fn make_libp2p_driver(
                         // If we don't have any peers, we should retry dialing our initial peers
                         if let Err(NoKnownPeers())= swarm.behaviour_mut().kad.bootstrap() {
                             if initial_peer_retries_remaining > 0 {
-                                info!("Failed to bootstrap: {}", NoKnownPeers());
+                                // info!("Failed to bootstrap: {}", NoKnownPeers());
                                 initial_peer_retries_remaining -= 1;
-                                dial_peers(&mut swarm, &initial_peers)?;
-                            } else {
-                                warn!("Failed to bootstrap after {} retries, will not attempt to redial initial peers.", INITIAL_PEER_RETRIES);
+                                dial_initial_peers(&mut swarm, &initial_peers)?;
                             }
+                            // else {
+                            //     warn!("Failed to bootstrap after {} retries, will not attempt to redial initial peers.", INITIAL_PEER_RETRIES);
+                            // }
                         }
                     },
                     _ = force_peer_dial.tick() => {
