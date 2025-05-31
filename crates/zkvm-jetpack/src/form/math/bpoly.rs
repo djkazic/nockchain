@@ -250,26 +250,36 @@ pub fn bp_ntt(bp: &[Belt], root: &Belt) -> Vec<Belt> {
             x.swap(rk as usize, k as usize);
         }
     }
+    let mut twiddle_factors: Vec<Vec<Belt>> = Vec::with_capacity(log_2_of_n as usize);
+    let mut m_precompute = 1;
+    for _stage_idx in 0..log_2_of_n {
+        let w_m: Belt = bpow(root.0, (n / (2 * m_precompute)) as u64).into();
+
+        let mut stage_twiddles: Vec<Belt> = Vec::with_capacity(m_precompute as usize);
+        let mut w = Belt(1);
+        for _j in 0..m_precompute {
+            stage_twiddles.push(w);
+            w = w * w_m;
+        }
+        twiddle_factors.push(stage_twiddles);
+        m_precompute *= 2;
+    }
 
     let mut m = 1;
-    for _ in 0..log_2_of_n {
-        let w_m: Belt = bpow(root.0, (n / (2 * m)) as u64).into();
+    for stage_idx in 0..log_2_of_n {
+        let current_stage_twiddles = &twiddle_factors[stage_idx as usize];
 
         let mut k = 0;
         while k < n {
-            let mut w = Belt(1);
-
             for j in 0..m {
                 let u: Belt = x[(k + j) as usize];
-                let v: Belt = x[(k + j + m) as usize] * w;
+                let v: Belt = x[(k + j + m) as usize] * current_stage_twiddles[j as usize];
+
                 x[(k + j) as usize] = u + v;
                 x[(k + j + m) as usize] = u - v;
-                w = w * w_m;
             }
-
             k += 2 * m;
         }
-
         m *= 2;
     }
     x
