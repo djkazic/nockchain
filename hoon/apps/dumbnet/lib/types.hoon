@@ -91,7 +91,7 @@
 ::
 +$  command
   $+  command
-  $%  [%pow prf=proof:sp dig=tip5-hash-atom:zeke bc=digest:tip5:zeke nonce=noun-digest:tip5:zeke] :: check if a proof of work is good for the next block, issue a block if so
+  $%  [%pow prf=proof:sp dig=tip5-hash-atom:zeke bc=noun-digest:tip5:zeke nonce=noun-digest:tip5:zeke] :: check if a proof of work is good for the next block, issue a block if so
       [%set-mining-key p=@t]  ::  set $lock for coinbase in mined blocks
       [%set-mining-key-advanced p=(list [share=@ m=@ keys=(list @t)])]  :: multisig and/or split coinbases
       [%enable-mining p=?]  ::  switch for generating candidate blocks for mining
