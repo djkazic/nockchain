@@ -13,6 +13,9 @@ nockchain-bitcoin-sync.workspace = true
 nockvm.workspace = true
 nockvm_macros.workspace = true
 
+mimalloc = { version = "0.1", default-features = false }
+lazy_static = "1.4"
+
 bitcoincore-rpc.workspace = true
 bs58.workspace = true
 clap.workspace = true
