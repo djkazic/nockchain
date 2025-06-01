@@ -162,34 +162,60 @@ pub fn create_mining_driver(
 }
 
 pub async fn mining_attempt(candidate: NounSlab, handle: NockAppHandle) -> () {
-    let snapshot_dir =
-        tokio::task::spawn_blocking(|| tempdir().expect("Failed to create temporary directory"))
-            .await
-            .expect("Failed to create temporary directory");
-    let hot_state = zkvm_jetpack::hot::produce_prover_hot_state();
-    let snapshot_path_buf = snapshot_dir.path().to_path_buf();
-    let jam_paths = JamPaths::new(snapshot_dir.path());
-    // Spawns a new std::thread for this mining attempt
-    let kernel =
-        Kernel::load_with_hot_state_huge(snapshot_path_buf, jam_paths, KERNEL, &hot_state, false)
-            .await
-            .expect("Could not load mining kernel");
-    let effects_slab = kernel
+    let kernel_result = GLOBAL_KERNEL_POOL.get_or_create(|| async {
+        let snapshot_dir = tokio::task::spawn_blocking(|| 
+            tempdir().expect("Failed to create temporary directory")
+        ).await.expect("Failed to create temporary directory");
+        
+        let hot_state = zkvm_jetpack::hot::produce_prover_hot_state();
+        let snapshot_path_buf = snapshot_dir.path().to_path_buf();
+        let jam_paths = JamPaths::new(snapshot_dir.path());
+        
+        let kernel = Kernel::load_with_hot_state_huge(
+            snapshot_path_buf.clone(), 
+            jam_paths.clone(), 
+            KERNEL, 
+            &hot_state, 
+            false
+        ).await.map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+        
+        Ok((kernel, snapshot_dir, jam_paths))
+    }).await;
+    
+    let (kernel, temp_dir, jam_paths) = match kernel_result {
+        Ok(data) => data,
+        Err(e) => {
+            warn!("Failed to get kernel: {e:?}");
+            return;
+        }
+    };
+    
+    let effects_slab = match kernel
         .poke(MiningWire::Candidate.to_wire(), candidate)
-        .await
-        .expect("Could not poke mining kernel with candidate");
+        .await {
+        Ok(slab) => slab,
+        Err(e) => {
+            warn!("Failed to poke kernel: {e:?}");
+            return;
+        }
+    };
+        
     for effect in effects_slab.to_vec() {
         let Ok(effect_cell) = (unsafe { effect.root().as_cell() }) else {
             drop(effect);
             continue;
         };
         if effect_cell.head().eq_bytes("command") {
-            handle
+            if let Err(e) = handle
                 .poke(MiningWire::Mined.to_wire(), effect)
-                .await
-                .expect("Could not poke nockchain with mined PoW");
+                .await {
+                warn!("Failed to poke nockchain with mined PoW: {e:?}");
+            }
         }
     }
+    
+    // Return kernel to pool for reuse
+    GLOBAL_KERNEL_POOL.return_kernel((kernel, temp_dir, jam_paths)).await;
 }
 
 #[instrument(skip(handle, pubkey))]
