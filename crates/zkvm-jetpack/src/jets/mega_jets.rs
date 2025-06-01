@@ -44,11 +44,19 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
         return jet_err::<Noun>();
     };
 
-    let Ok(chal_map) = HoonMap::try_from(chal_map_noun) else {
-        return jet_err::<Noun>();
+    let chal_map_opt: Option<HoonMap> = unsafe {
+        if chal_map_noun.raw_equals(&D(0)) {
+            None
+        } else {
+            HoonMap::try_from(chal_map_noun).ok()
+        }
     };
-    let Ok(com_map) = HoonMap::try_from(com_map_noun) else {
-        return jet_err::<Noun>();
+    let com_map_opt: Option<HoonMap> = unsafe {
+        if com_map_noun.raw_equals(&D(0)) {
+            None
+        } else {
+            HoonMap::try_from(com_map_noun).ok()
+        }
     };
 
     let mut acc_vec = zero_bpoly();
@@ -69,7 +77,9 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
 
         let poly_len_for_var_com = 4 * height_usize;
 
-        let mut inner_acc_vec = ones_bpoly(k.len());
+        // --- FIX HERE: Initialize inner_acc_vec with the correct expected length ---
+        let mut inner_acc_vec = ones_bpoly(poly_len_for_var_com);
+        // --- END FIX ---
 
         for i in 0..k.len() {
             let ter = k.0[i];
@@ -86,7 +96,11 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
                     }
                     let var_slice = &trace_evals.0[var_start_idx..var_end_idx];
 
-                    let hadamard_res_len = inner_acc_vec.len().min(var_slice.len());
+                    // Check before calling bp_hadamard (for debugging, if needed)
+                    // eprintln!("Var: inner_acc_vec.len() = {}, var_slice.len() = {}",
+                    //           inner_acc_vec.len(), var_slice.len());
+
+                    let hadamard_res_len = inner_acc_vec.len().min(var_slice.len()); // Still okay for buffer size, but inputs must match
                     let (_res_atom, res_poly_slice): (IndirectAtom, &mut [Belt]) =
                         new_handle_mut_slice(stack, Some(hadamard_res_len));
 
@@ -97,7 +111,9 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
                     }
                 }
                 MegaTyp::Rnd => {
-                    let rnd_noun = chal_map.get(stack, D(idx as u64)).ok_or_else(|| jet_err::<()>().unwrap_err())?;
+                    let rnd_noun = chal_map_opt.as_ref()
+                        .and_then(|m| m.get(stack, D(idx as u64)))
+                        .ok_or_else(|| jet_err::<()>().unwrap_err())?;
                     let Ok(rnd) = rnd_noun.as_belt() else {
                         return jet_err::<()>();
                     };
@@ -123,12 +139,18 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
                 MegaTyp::Con => {
                 }
                 MegaTyp::Com => {
-                    let com_noun = com_map.get(stack, D(idx as u64)).ok_or_else(|| jet_err::<()>().unwrap_err())?;
+                    let com_noun = com_map_opt.as_ref()
+                        .and_then(|m| m.get(stack, D(idx as u64)))
+                        .ok_or_else(|| jet_err::<()>().unwrap_err())?;
                     let Ok(com_slice) = BPolySlice::try_from(com_noun) else {
                         return jet_err::<()>();
                     };
 
-                    let hadamard_res_len = inner_acc_vec.len().min(com_slice.len());
+                    // Check before calling bp_hadamard (for debugging, if needed)
+                    // eprintln!("Com: inner_acc_vec.len() = {}, com_slice.0.len() = {}",
+                    //           inner_acc_vec.len(), com_slice.0.len());
+
+                    let hadamard_res_len = inner_acc_vec.len().min(com_slice.len()); // Still okay for buffer size, but inputs must match
                     let (_res_atom, res_poly_slice): (IndirectAtom, &mut [Belt]) =
                         new_handle_mut_slice(stack, Some(hadamard_res_len));
 
