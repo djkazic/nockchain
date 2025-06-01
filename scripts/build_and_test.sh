@@ -5,7 +5,7 @@ set -e
 echo "=== Building Nockchain Optimized Miner ==="
 
 # Create project structure if it doesn't exist
-if [ ! -d "nockchain-optimized" ]; then
+if [ ! -d "crates/hoonc" ]; then
     echo "Creating project directory..."
     cargo new --lib nockchain-optimized
     cd nockchain-optimized
