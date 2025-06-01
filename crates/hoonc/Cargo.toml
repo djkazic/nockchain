@@ -18,27 +18,22 @@ thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-lazy_static = "1.4"
-
-# tracing-tracy = { workspace = true, features = ["flush-on-exit"] }
 walkdir = "2.5.0"
+# Memory optimization dependencies
+lazy_static = "1.4"
+mimalloc = { version = "0.1", default-features = false }
+bumpalo = "3.14"
+rayon = "1.8"
+num_cpus = "1.16"
 
 [[bin]]
 name = "hoonc"
 path = "src/main.rs"
 
-[package]
-name = "nockchain-miner-optimized"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-# Memory optimization
-mimalloc = { version = "0.1", default-features = false }
-bumpalo = "3.14"
-# For future parallelization
-rayon = "1.8"
-num_cpus = "1.16"
+# Add test binary for memory testing
+[[bin]]
+name = "test_memory"
+path = "src/bin/test_memory.rs"
 
 [profile.release]
 opt-level = 3
@@ -46,7 +41,6 @@ lto = "fat"
 codegen-units = 1
 panic = "abort"
 strip = true
-# This alone can reduce memory usage by 10-20%
 overflow-checks = false
 
 [profile.release.package."*"]
@@ -55,4 +49,4 @@ opt-level = 3
 # Memory-optimized build
 [profile.memory-opt]
 inherits = "release"
-opt-level = "s"  # Optimize for size
+opt-level = "s"
