@@ -12,6 +12,7 @@ use nockvm::noun::{Atom, D, T};
 use nockvm_macros::tas;
 use tempfile::tempdir;
 use tracing::{instrument, warn};
+use crate::mining_pool::GLOBAL_KERNEL_POOL;
 
 pub enum MiningWire {
     Mined,
