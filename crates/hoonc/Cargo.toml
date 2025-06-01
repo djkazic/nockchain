@@ -18,6 +18,8 @@ thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+lazy_static = "1.4"
+
 # tracing-tracy = { workspace = true, features = ["flush-on-exit"] }
 walkdir = "2.5.0"
 
