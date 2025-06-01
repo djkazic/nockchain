@@ -32,3 +32,6 @@ nockchain --mining-pubkey ${MINING_PUBKEY} --mine
 
 # Clean up
 kill $MONITOR_PID 2>/dev/null
+
+
+-bash chmod +x scripts/run_optimized_miner.sh
