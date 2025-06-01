@@ -232,29 +232,29 @@ pub fn bp_ifft(bp: &[Belt], root: &Belt) -> Result<Vec<Belt>, FieldError> {
 
 pub fn bp_ntt(bp: &[Belt], root: &Belt) -> Vec<Belt> {
     let n = bp.len() as u32;
-
     if n == 1 {
         return vec![bp[0]];
     }
-
-    debug_assert!(n.is_power_of_two());
+    debug_assert!(n.is_power_of_two(), "n must be a power of two for NTT");
 
     let log_2_of_n = n.ilog2();
-
     let mut x: Vec<Belt> = vec![Belt(0); n as usize];
     x.copy_from_slice(bp);
+
+    let x_ptr: *mut Belt = x.as_mut_ptr();
 
     for k in 0..n {
         let rk = bitreverse(k, log_2_of_n);
         if k < rk {
-            x.swap(rk as usize, k as usize);
+            unsafe {
+                std::ptr::swap(x_ptr.add(rk as usize), x_ptr.add(k as usize));
+            }
         }
     }
     let mut twiddle_factors: Vec<Vec<Belt>> = Vec::with_capacity(log_2_of_n as usize);
     let mut m_precompute = 1;
     for _stage_idx in 0..log_2_of_n {
         let w_m: Belt = bpow(root.0, (n / (2 * m_precompute)) as u64).into();
-
         let mut stage_twiddles: Vec<Belt> = Vec::with_capacity(m_precompute as usize);
         let mut w = Belt(1);
         for _j in 0..m_precompute {
@@ -268,15 +268,67 @@ pub fn bp_ntt(bp: &[Belt], root: &Belt) -> Vec<Belt> {
     let mut m = 1;
     for stage_idx in 0..log_2_of_n {
         let current_stage_twiddles = &twiddle_factors[stage_idx as usize];
+        let twiddle_ptr: *const Belt = current_stage_twiddles.as_ptr();
 
         let mut k = 0;
         while k < n {
-            for j in 0..m {
-                let u: Belt = x[(k + j) as usize];
-                let v: Belt = x[(k + j + m) as usize] * current_stage_twiddles[j as usize];
+            const LANES: u32 = 4;
 
-                x[(k + j) as usize] = u + v;
-                x[(k + j + m) as usize] = u - v;
+            let mut j = 0;
+            while (j + LANES) <= m {
+                unsafe {
+                    // Butterfly 0
+                    let u0_ptr = x_ptr.add((k + j) as usize);
+                    let v0_ptr = x_ptr.add((k + j + m) as usize);
+                    let w0 = *twiddle_ptr.add(j as usize);
+                    let u0 = *u0_ptr;
+                    let v0 = *v0_ptr * w0;
+                    *u0_ptr = u0 + v0;
+                    *v0_ptr = u0 - v0;
+
+                    // Butterfly 1
+                    let u1_ptr = x_ptr.add((k + j + 1) as usize);
+                    let v1_ptr = x_ptr.add((k + j + 1 + m) as usize);
+                    let w1 = *twiddle_ptr.add((j + 1) as usize);
+                    let u1 = *u1_ptr;
+                    let v1 = *v1_ptr * w1;
+                    *u1_ptr = u1 + v1;
+                    *v1_ptr = u1 - v1;
+
+                    // Butterfly 2
+                    let u2_ptr = x_ptr.add((k + j + 2) as usize);
+                    let v2_ptr = x_ptr.add((k + j + 2 + m) as usize);
+                    let w2 = *twiddle_ptr.add((j + 2) as usize);
+                    let u2 = *u2_ptr;
+                    let v2 = *v2_ptr * w2;
+                    *u2_ptr = u2 + v2;
+                    *v2_ptr = u2 - v2;
+
+                    // Butterfly 3
+                    let u3_ptr = x_ptr.add((k + j + 3) as usize);
+                    let v3_ptr = x_ptr.add((k + j + 3 + m) as usize);
+                    let w3 = *twiddle_ptr.add((j + 3) as usize);
+                    let u3 = *u3_ptr;
+                    let v3 = *v3_ptr * w3;
+                    *u3_ptr = u3 + v3;
+                    *v3_ptr = u3 - v3;
+                }
+                j += LANES;
+            }
+
+            while j < m {
+                unsafe {
+                    let u_ptr = x_ptr.add((k + j) as usize);
+                    let v_ptr = x_ptr.add((k + j + m) as usize);
+                    let w = *twiddle_ptr.add(j as usize);
+
+                    let u: Belt = *u_ptr;
+                    let v: Belt = *v_ptr * w;
+
+                    *u_ptr = u + v;
+                    *v_ptr = u - v;
+                }
+                j += 1;
             }
             k += 2 * m;
         }
