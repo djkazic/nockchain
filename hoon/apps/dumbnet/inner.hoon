@@ -861,7 +861,8 @@
           ::    once a genesis block has been received.
           ::    """
           =.  m.k  (set-mining:min p.command)
-          `k
+          :: try to mine a genesis immediately
+          (do-mine (hash-noun-varlen:tip5:zeke [%nonce eny]))
         ::~&  >  'generation of candidate blocks enabled.'
         =.  m.k  (set-mining:min p.command)
         =.  m.k  (heard-new-block:min c.k p.k now)
