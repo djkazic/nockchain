@@ -8,28 +8,21 @@ export MINING_PUBKEY
 
 # Use mimalloc features
 export MIMALLOC_LARGE_OS_PAGES=1
-export MIMALLOC_RESERVE_HUGE_OS_PAGES=4
-
-# Limit memory usage to prevent runaway allocation
-ulimit -v 10485760  # 10GB virtual memory limit
-
-# Set CPU governor to performance (requires root)
-if [ "$EUID" -eq 0 ]; then
-    echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor > /dev/null
-fi
-
-# Pre-load optimized library
-export LD_PRELOAD="./nockchain-optimized/target/release/libnockchain_optimized.so:$LD_PRELOAD"
+export MIMALLOC_RESERVE_HUGE_OS_PAGES=2
 
 echo "Starting Nockchain miner with memory optimizations..."
-echo "Memory limit: 10GB"
-echo "Using mimalloc with huge pages"
+echo "- Using MiMalloc allocator"
+echo "- Kernel pooling enabled"
+echo "- Large OS pages enabled"
 
 # Monitor memory usage in background
 (
     while true; do
         sleep 30
-        echo "Memory usage: $(ps aux | grep nockchain | grep -v grep | awk '{print $6/1024 " MB"}')"
+        MEM=$(ps aux | grep nockchain | grep -v grep | awk '{print $6/1024 " MB"}' | head -1)
+        if [ ! -z "$MEM" ]; then
+            echo "[Memory Monitor] Current usage: $MEM"
+        fi
     done
 ) &
 MONITOR_PID=$!
