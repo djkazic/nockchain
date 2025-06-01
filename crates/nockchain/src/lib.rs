@@ -1,4 +1,5 @@
 pub mod mining;
+pub mod mining_pool;
 
 use std::error::Error;
 use std::fs;
