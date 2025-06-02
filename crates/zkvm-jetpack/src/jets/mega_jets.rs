@@ -18,7 +18,7 @@ fn zero_bpoly() -> BPolyVec {
     BPolyVec::from(vec![0u64])
 }
 
-fn ones_bpoly(len: usize) -> BPolyVec {
+fn lagrange_one_bpoly(len: usize) -> BPolyVec {
     BPolyVec::from(vec![1u64; len])
 }
 
@@ -76,7 +76,7 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
         }
 
         let poly_len_for_var_com = 4 * height_usize;
-        let mut inner_acc_vec = ones_bpoly(poly_len_for_var_com);
+        let mut inner_acc_vec = lagrange_one_bpoly(poly_len_for_var_com);
 
         for i in 0..k.len() {
             let ter = k.0[i];
@@ -93,8 +93,9 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
                     }
                     let var_slice = &trace_evals.0[var_start_idx..var_end_idx];
                     let hadamard_res_len = inner_acc_vec.len().min(var_slice.len());
-                    let (_res_atom, res_poly_slice): (IndirectAtom, &mut [Belt]) =
-                        new_handle_mut_slice(stack, Some(hadamard_res_len));
+
+                    let mut temp_res_vec_belt: Vec<Belt> = vec![Belt::from(0u64); hadamard_res_len];
+                    let res_poly_slice = temp_res_vec_belt.as_mut_slice();
 
                     for _ in 0..exp {
                         let current_inner_acc_slice = &inner_acc_vec.0;
@@ -111,10 +112,11 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
                     };
 
                     let pow_rnd = bpow(rnd.0, exp);
-                    let (_res_atom, res_poly_slice): (IndirectAtom, &mut [Belt]) =
-                        new_handle_mut_slice(stack, Some(inner_acc_vec.len()));
+                    let mut temp_res_vec_belt: Vec<Belt> = vec![Belt::from(0u64); inner_acc_vec.len()];
+                    let res_poly_slice = temp_res_vec_belt.as_mut_slice();
+
                     bpscal(Belt(pow_rnd), &inner_acc_vec.0, res_poly_slice);
-                    inner_acc_vec = BPolyVec::from(res_poly_slice.iter().map(|&b| b.0).collect::<Vec<u64>>());
+                    inner_acc_vec = BPolyVec::from(temp_res_vec_belt.into_iter().map(|b| b.0).collect::<Vec<u64>>());
                 }
                 MegaTyp::Dyn => {
                     if idx >= dyns.len() {
@@ -123,10 +125,11 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
                     let dyn_val = dyns.0[idx];
 
                     let pow_dyn = bpow(dyn_val.0, exp);
-                    let (_res_atom, res_poly_slice): (IndirectAtom, &mut [Belt]) =
-                        new_handle_mut_slice(stack, Some(inner_acc_vec.len()));
+                    let mut temp_res_vec_belt: Vec<Belt> = vec![Belt::from(0u64); inner_acc_vec.len()];
+                    let res_poly_slice = temp_res_vec_belt.as_mut_slice();
+
                     bpscal(Belt(pow_dyn), &inner_acc_vec.0, res_poly_slice);
-                    inner_acc_vec = BPolyVec::from(res_poly_slice.iter().map(|&b| b.0).collect::<Vec<u64>>());
+                    inner_acc_vec = BPolyVec::from(temp_res_vec_belt.into_iter().map(|b| b.0).collect::<Vec<u64>>());
                 }
                 MegaTyp::Con => {
                 }
@@ -139,8 +142,8 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
                     };
 
                     let hadamard_res_len = inner_acc_vec.len().min(com_slice.len());
-                    let (_res_atom, res_poly_slice): (IndirectAtom, &mut [Belt]) =
-                        new_handle_mut_slice(stack, Some(hadamard_res_len));
+                    let mut temp_res_vec_belt: Vec<Belt> = vec![Belt::from(0u64); hadamard_res_len];
+                    let res_poly_slice = temp_res_vec_belt.as_mut_slice();
 
                     for _ in 0..exp {
                         let current_inner_acc_slice = &inner_acc_vec.0;
@@ -151,20 +154,20 @@ pub fn mp_substitute_mega_jet(context: &mut Context, subject: Noun) -> Result {
             }
         }
 
-        let (_scaled_atom, scaled_poly_slice): (IndirectAtom, &mut [Belt]) =
-            new_handle_mut_slice(stack, Some(inner_acc_vec.len()));
+        let mut scaled_inner_vec_belt: Vec<Belt> = vec![Belt::from(0u64); inner_acc_vec.len()];
+        let scaled_poly_slice = scaled_inner_vec_belt.as_mut_slice();
         bpscal(v, &inner_acc_vec.0, scaled_poly_slice);
-        let scaled_inner_vec = BPolyVec::from(scaled_poly_slice.iter().map(|&b| b.0).collect::<Vec<u64>>());
+        let scaled_inner_bpolyvec = BPolyVec::from(scaled_inner_vec_belt.into_iter().map(|b| b.0).collect::<Vec<u64>>());
 
-        let new_acc_len = acc_vec.len().max(scaled_inner_vec.len());
-        let (_new_acc_atom, new_acc_poly_slice): (IndirectAtom, &mut [Belt]) =
-            new_handle_mut_slice(stack, Some(new_acc_len));
-        bpadd(&acc_vec.0, &scaled_inner_vec.0, new_acc_poly_slice);
-        acc_vec = BPolyVec::from(new_acc_poly_slice.iter().map(|&b| b.0).collect::<Vec<u64>>());
+
+        let new_acc_len = acc_vec.len().max(scaled_inner_bpolyvec.len());
+        let mut new_acc_vec_belt: Vec<Belt> = vec![Belt::from(0u64); new_acc_len];
+        let new_acc_poly_slice = new_acc_vec_belt.as_mut_slice();
+        bpadd(&acc_vec.0, &scaled_inner_bpolyvec.0, new_acc_poly_slice);
+        acc_vec = BPolyVec::from(new_acc_vec_belt.into_iter().map(|b| b.0).collect::<Vec<u64>>());
 
         Ok(())
     })?;
-
     let (_final_res_atom, final_res_poly_slice): (IndirectAtom, &mut [Belt]) =
         new_handle_mut_slice(stack, Some(acc_vec.len()));
     final_res_poly_slice.copy_from_slice(&acc_vec.0);
