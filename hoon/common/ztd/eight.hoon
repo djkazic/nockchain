@@ -143,10 +143,16 @@
           num-cols=@
       ==
   ^-  mary
+  :: Debug prints for input arguments. These will be executed once per call to compute-lde.
+  :: This avoids modifying the sensitive 'turn' lambda, ensuring compilation.
+  ~&  [%debug-compute-lde-g g]
+  ~&  [%debug-compute-lde-fri-domain-len fri-domain-len]
+  ~&  [%debug-compute-lde-num-cols num-cols]
+
   =/  fps=(list mary)
     %+  turn  table-polys
     |=  t=mary
-    (turn-coseword t g fri-domain-len)
+    (turn-coseword t g fri-domain-len) :: Keep this lambda body simple and in its original, compiling form.
   =/  res=mary
     :+  step=fri-domain-len
       len=num-cols

@@ -6614,6 +6614,7 @@ dependencies = [
  "num-traits",
  "quickcheck",
  "smallvec",
+ "strum",
  "tracing",
 ]
 

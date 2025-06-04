@@ -1,7 +1,11 @@
 use nockvm::interpreter::Context;
+use nockapp::noun::FromAtom;
 use nockvm::jets::util::slot;
 use nockvm::jets::Result;
+use nockvm::jets::JetErr;
 use nockvm::noun::{Atom, IndirectAtom, Noun, D, T};
+
+use tracing::info;
 
 use crate::form::math::bpoly::*;
 use crate::form::poly::*;
@@ -253,6 +257,131 @@ pub fn bp_coseword_jet(context: &mut Context, subject: Noun) -> Result {
     let res_cell = finalize_poly(&mut context.stack, Some(res_poly.len()), res);
 
     Ok(res_cell)
+}
+
+pub fn turn_coseword_jet(context: &mut nockvm::interpreter::Context, subject: Noun) -> Result {
+    let cell_subject = subject.as_cell()?;
+    let polys_noun = cell_subject.head();
+    let rest_of_subject_noun = cell_subject.tail();
+    let rest_of_subject_cell = rest_of_subject_noun.as_cell()?;
+
+    let offset_noun = rest_of_subject_cell.head();
+    let order_noun = rest_of_subject_cell.tail();
+
+    info!("&polys_noun = {:?}", polys_noun);
+    info!("&offset_noun = {:?}", offset_noun);
+    info!("&order_noun = {:?}", order_noun);
+
+    info!("offset_noun = {:?}", offset_noun);
+    // Ensure offset_noun is a cell, as logs confirm it is
+    let offset_cell = offset_noun.as_cell()?;
+    info!("offset_cell.head() = {:?}", offset_cell.head());
+    info!("offset_cell.tail() = {:?}", offset_cell.tail());
+
+    let head = offset_cell.head();
+    if head.is_cell() {
+        let head_cell = head.as_cell()?;
+        info!("offset_cell.head().head() = {:?}", head_cell.head());
+        info!("offset_cell.head().tail() = {:?}", head_cell.tail());
+
+        let head_head = head_cell.head();
+        if head_head.is_cell() {
+            let head_head_cell = head_head.as_cell()?;
+            info!("offset_cell.head().head().head() = {:?}", head_head_cell.head());
+            info!("offset_cell.head().head().tail() = {:?}", head_head_cell.tail());
+        } else {
+            info!("offset_cell.head().head() is atom: {:?}", head_head.as_atom());
+        }
+
+        let head_tail = head_cell.tail();
+        if head_tail.is_cell() {
+            let head_tail_cell = head_tail.as_cell()?;
+            info!("offset_cell.head().tail().head() = {:?}", head_tail_cell.head());
+            info!("offset_cell.head().tail().tail() = {:?}", head_tail_cell.tail());
+        } else {
+            info!("offset_cell.head().tail() is atom: {:?}", head_tail.as_atom());
+        }
+    } else {
+        info!("offset_cell.head() is atom: {:?}", head.as_atom());
+    }
+
+    let tail = offset_cell.tail();
+    if tail.is_cell() {
+        let tail_cell = tail.as_cell()?;
+        info!("offset_cell.tail().head() = {:?}", tail_cell.head());
+        info!("offset_cell.tail().tail() = {:?}", tail_cell.tail());
+    } else {
+        info!("offset_cell.tail() is atom: {:?}", tail.as_atom());
+    }
+
+    info!("order_noun = {:?}", order_noun);
+    // Ensure order_noun is a cell, as logs confirm it is
+    let order_cell = order_noun.as_cell()?;
+    info!("order_cell.head() = {:?}", order_cell.head());
+    info!("order_cell.tail() = {:?}", order_cell.tail());
+
+    let head = order_cell.head();
+    if head.is_cell() {
+        let head_cell = head.as_cell()?;
+        info!("order_cell.head().head() = {:?}", head_cell.head());
+        info!("order_cell.head().tail() = {:?}", head_cell.tail());
+
+        let head_head = head_cell.head();
+        if head_head.is_cell() {
+            let head_head_cell = head_head.as_cell()?;
+            info!("order_cell.head().head().head() = {:?}", head_head_cell.head());
+            info!("order_cell.head().head().tail() = {:?}", head_head_cell.tail());
+
+            let head_head_head = head_head_cell.head();
+            if head_head_head.is_cell() {
+                let head_head_head_cell = head_head_head.as_cell()?;
+                info!("order_cell.head().head().head().head() = {:?}", head_head_head_cell.head());
+                info!("order_cell.head().head().head().tail() = {:?}", head_head_head_cell.tail());
+            } else {
+                info!("order_cell.head().head().head() is atom: {:?}", head_head_head.as_atom());
+            }
+
+            let head_head_tail = head_head_cell.tail();
+            if head_head_tail.is_cell() {
+                let head_head_tail_cell = head_head_tail.as_cell()?;
+                info!("order_cell.head().head().tail().head() = {:?}", head_head_tail_cell.head());
+                info!("order_cell.head().head().tail().tail() = {:?}", head_head_tail_cell.tail());
+            } else {
+                info!("order_cell.head().head().tail() is atom: {:?}", head_head_tail.as_atom());
+            }
+        } else {
+            info!("order_cell.head().head() is atom: {:?}", head_head.as_atom());
+        }
+
+        let tail = head_cell.tail();
+        if tail.is_cell() {
+            let tail_cell = tail.as_cell()?;
+            info!("order_cell.head().tail().head() = {:?}", tail_cell.head());
+            info!("order_cell.head().tail().tail() = {:?}", tail_cell.tail());
+        } else {
+            info!("order_cell.head().tail() is atom: {:?}", tail.as_atom());
+        }
+    } else {
+        info!("order_cell.head() is atom: {:?}", head.as_atom());
+    }
+
+    let tail = order_cell.tail();
+    if tail.is_cell() {
+        let tail_cell = tail.as_cell()?;
+        info!("order_cell.tail().head() = {:?}", tail_cell.head());
+        info!("order_cell.tail().tail() = {:?}", tail_cell.tail());
+    } else {
+        info!("order_cell.tail() is atom: {:?}", tail.as_atom());
+    }
+
+    // === CORRECTED LINES START HERE ===
+    // Each call to .tail() returns a Noun. To call .head() on it, it must be
+    // explicitly converted back to a Cell using .as_cell()?.
+    let offset_atom = offset_cell.tail().as_cell()?.head().as_atom()?; // Example: Extracts '7' from your logs
+    let order_atom = order_cell.tail().as_cell()?.head().as_atom()?;   // Example: Extracts '3' from your logs
+    // === CORRECTED LINES END HERE ===
+
+    Ok(Noun::from_atom(Atom::new(&mut context.stack, 0)))
 }
 
 pub fn init_bpoly_jet(context: &mut Context, subject: Noun) -> Result {
