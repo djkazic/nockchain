@@ -838,8 +838,12 @@
           ~&  "mined for wrong (old) block commitment"  `k
         ?.  =(nonce.command next-nonce.m.k)
           ~&  "mined wrong (old) nonce"  `k
-        ?:  %+  check-target:mine  dig.command
-            (~(got z-by targets.c.k) parent.candidate-block.m.k)
+        ?:  ?:  =(*page-number:t candidate-block.m.k)
+              %+  check-target:mine  dig.command
+                (~(got z-by targets.c.k) parent.candidate-block.m.k)
+              :: If this is the genesis block, we need to check its validity this way
+              %+  check-target:mine  (proof-to-pow:zeke prf.command)
+                  target.candidate-block.m.k
           =.  m.k  (set-pow:min prf.command)
           =.  m.k  set-digest:min
           (heard-block /poke/miner now candidate-block.m.k eny)
