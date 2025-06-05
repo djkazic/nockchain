@@ -835,7 +835,8 @@
         =/  commit=block-commitment:t
           (block-commitment:page:t candidate-block.m.k)
         ?.  =(bc.command commit)
-          ~&  "mined for wrong (old) block commitment"  `k
+          ~&  "mined for wrong (old) block commitment"
+          (do-mine (atom-to-digest:tip5:zeke next-nonce.m.k))
         ?.  =(nonce.command next-nonce.m.k)
           ~&  "mined wrong (old) nonce"  `k
         ?:  ?:  =(*page-number:t candidate-block.m.k)
