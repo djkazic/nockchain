@@ -326,7 +326,7 @@ pub fn make_libp2p_driver(
                                 let _ = swarm.behaviour_mut().request_response.send_response(channel, response);
                             },
                             SwarmAction::BlockPeer { peer_id } => {
-                                warn!("SAction: Blocking peer {peer_id}");
+                                debug!("SAction: Blocking peer {peer_id}");
                                 // Block the peer in the allow_block_list
                                 swarm.behaviour_mut().allow_block_list.block_peer(peer_id);
                                 {
@@ -365,7 +365,7 @@ pub fn make_libp2p_driver(
                                 initial_peer_retries_remaining -= 1;
                                 dial_peers(&mut swarm, &initial_peers)?;
                             } else {
-                                warn!("Failed to bootstrap after {} retries, will not attempt to redial initial peers.", initial_peer_retries);
+                                debug!("Failed to bootstrap after {} retries, will not attempt to redial initial peers.", initial_peer_retries);
                             }
                         }
                     },
@@ -769,7 +769,7 @@ async fn handle_request_response(
                         .await
                         .requested(ip4, request_high_threshold);
                     if let Some(count) = threshold_exceeded {
-                        warn!("IP address {ip4} exceeded the request-per-interval threshold with {count} requests");
+                        debug!("IP address {ip4} exceeded the request-per-interval threshold with {count} requests");
                     }
                 }
             } else {
@@ -1060,7 +1060,7 @@ async fn log_peer_status(swarm: &mut Swarm<NockchainBehaviour>, metrics: &Nockch
         let peer_count = connected_peers.len();
 
         if peer_count == 0 {
-            warn!(
+            debug!(
                 connected_peers = peer_count,
                 peers = ?connected_peers.iter().map(|p| p.to_base58()).collect::<Vec<_>>(),
                 "No current peers connected!"
@@ -1083,7 +1083,7 @@ async fn log_peer_status(swarm: &mut Swarm<NockchainBehaviour>, metrics: &Nockch
     }
 
     if routing_table_size == 0 {
-        warn!(
+        debug!(
             routing_table_size = routing_table_size,
             "Routing table is empty!"
         );
