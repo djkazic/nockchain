@@ -834,10 +834,8 @@
         ?>  ?=([%pow *] command)
         =/  commit=block-commitment:t
           (block-commitment:page:t candidate-block.m.k)
-        ?.  =(bc.command commit)
-          ~&  "mined for wrong (old) block commitment"  `k
-        ?.  =(nonce.command next-nonce.m.k)
-          ~&  "mined wrong (old) nonce"  `k
+        :: Removed: ?. =(bc.command commit) ... `k
+        :: Removed: ?. =(nonce.command next-nonce.m.k) ... `k
         ?:  ?:  =(*page-number:t candidate-block.m.k)
               %+  check-target:mine  dig.command
                 (~(got z-by targets.c.k) parent.candidate-block.m.k)
