@@ -495,6 +495,16 @@ pub fn interpret(context: &mut Context, mut subject: Noun, formula: Noun) -> Res
         push_formula(&mut context.stack, formula, true)?;
 
         loop {
+            if context.running_status.load(Ordering::SeqCst) < NockCancelToken::RUNNING_IDLE {
+                // Exit immediately with the cancellation error
+                return Err(exit(
+                    context,
+                    &snapshot,
+                    virtual_frame,
+                    Error::NonDeterministic(Mote::Intr, D(0)),
+                ));
+            }
+
             let work: NockWork = *context.stack.top();
             match work {
                 NockWork::Done => {
