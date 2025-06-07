@@ -205,7 +205,7 @@
   ::    |=  [i=@ t=table-dat]
   ::    %-  (test:zkvm-debug p.t s f)
   ::    [challenges (~(got by dyn-map) i) r.t]
-  ~&  %passed-tests
+  :: ~&  %passed-tests
   ::
   =/  num-extra-constraints=@
     %+  roll  (range num-tables)
@@ -230,7 +230,7 @@
   ::  polys that will give the value of the following row. Then we weld these second-row polys
   ::  to the original polys to get the double trace polys. These can then be used to compose with
   ::  the constraints and evaluate at the DEEP challenge later on.
-  ~&  %transposing-table
+  :: ~&  %transposing-table
   ::  TODO: we already transposed the tables when we interpolated the polynomials and we should
   ::  just reuse that. But that requires changing the interface to the interpolation functions.
   =/  marys=(list table-mary)
@@ -241,7 +241,7 @@
     |=  =table-mary
     (transpose-bpolys p.table-mary)
   ::
-  ~&  %composing-trace-polys
+  :: ~&  %composing-trace-polys
   ::  each mary is a list of a table's columns, interpolated to polys
   =/  trace-polys
     %+  turn  (zip-up polys.base (zip-up polys.ext polys.mega-ext))
@@ -258,7 +258,7 @@
     =/  bp=bpoly  (~(snag-as-bpoly ave polys) i)
     (bp-ifft (bp-shift-by-unity bp 1))
   ::
-  ~&  %appending-first-and-second-row-trace-polys
+  :: ~&  %appending-first-and-second-row-trace-polys
   ::
   =/  tworow-trace-polys=(list mary)
     %^    zip

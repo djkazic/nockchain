@@ -220,8 +220,8 @@
         ?>  ?=(%fact -.cause)
         (handle-fact wir eny our now p.cause)
       ==
-    ::  possibly update timestamp on candidate block for mining
-    =.  m.k  (update-timestamp:min now)
+    ::  disabled: update-timestamp currently breaks fakenet
+    :: =.  m.k  (update-timestamp:min now)
     effs^k
     ::
     ::  +heard-genesis-block: check if block is a genesis block and decide whether to keep it
@@ -247,6 +247,7 @@
     ++  heard-block
       |=  [wir=wire now=@da pag=page:t eny=@]
       ^-  [(list effect:dk) kernel-state:dk]
+      ~&  "heard-block: DEBUG A - Entered heard-block."
       ?:  =(*page-number:t height.pag)
         ::  heard genesis block
         ~>  %slog.[0 leaf+"heard genesis block"]
@@ -273,6 +274,7 @@
       ::  yes, we have its parent
       ::
       ::  do we already have this block?
+      ~&  "heard-block: DEBUG B - Checking for duplicates."
       ?:  (check-duplicate-block digest.pag)
         :: do almost nothing (idempotency), we already have block
         :: however we *should* tell the runtime we have it
@@ -283,6 +285,7 @@
       ::  emit a %liar-peer. if it is, then any further %liar effects
       ::  should be %liar-block-id. this tells the runtime that
       ::  anybody who sends us this block id is a liar
+      ~&  "heard-block: DEBUG C - Checking digest."
       ?.  (check-digest:page:t pag)
         ~>  %slog.[0 leaf+"digest is not valid"]
         :_  k
@@ -290,6 +293,7 @@
       ::
       ::  since we know the digest is valid, we want to tell the runtime
       ::  to start tracking that block-id.
+      ~&  "heard-block: DEBUG D - Block added to tracking."
       =/  block-effs=(list effect:dk)
         =/  =(pole)  wir
         ?.  ?=([%poke %libp2p ver=@ typ=?(%gossip %response) %peer-id =peer-id:dk *] pole)
@@ -316,12 +320,14 @@
         %+  snoc  block-effs
         [%liar-block-id digest.pag +.check-page-without-txs]
       ::
+      ~&  "heard-block: DEBUG E - Checking block POW."
       ?.  (check-pow pag)
         :_  k
         %+  snoc  block-effs
         [%liar-block-id digest.pag %failed-pow-check]
       ::
       ::  tell driver we have seen this block so don't send it back to the kernel again
+      ~&  "heard-block: DEBUG F - Check block POW OK."
       =.  block-effs
         [[%seen %block digest.pag `height.pag] block-effs]
       ::  stop tracking block id as soon as we verify pow
@@ -492,12 +498,15 @@
     ++  check-pow
       |=  pag=page:t
       ^-  ?
+      ~&  "check-pow: DEBUG: Entry."
       ?.  check-pow-flag:t
         ~>  %slog.[0 leaf+"WARNING: check-pow-flag is off, skipping pow check"]
         ::  this case only happens during testing
         %.y
+      ~&  "check-pow: DEBUG: check-pow-flag done"
       ?~  pow.pag
         %.n
+      ~&  "check-pow: DEBUG: check pow.pag done"
       ::
       ::  validate that powork puzzle in the proof is correct.
       ?&  (check-pow-puzzle u.pow.pag pag)
@@ -836,15 +845,20 @@
           (block-commitment:page:t candidate-block.m.k)
         :: Removed: ?. =(bc.command commit) ... `k
         :: Removed: ?. =(nonce.command next-nonce.m.k) ... `k
+        ~&  "do-pow: DEBUG 1 - About to perform core validation."
         ?:  ?:  =(*page-number:t candidate-block.m.k)
               %+  check-target:mine  dig.command
                 (~(got z-by targets.c.k) parent.candidate-block.m.k)
               :: If this is the genesis block, we need to check its validity this way
               %+  check-target:mine  (proof-to-pow:zeke prf.command)
                   target.candidate-block.m.k
+          ~&  "do-pow: DEBUG 2 - Core validation done. About to update state with set-pow."
           =.  m.k  (set-pow:min prf.command)
+          ~&  "do-pow: DEBUG 3 - set-pow done. About to update state with set-digest."
           =.  m.k  set-digest:min
+          ~&  "do-pow: DEBUG 4 - set-digest done. About to call heard-block."
           (heard-block /poke/miner now candidate-block.m.k eny)
+          ~&  "do-pow: DEBUG 5 - heard-block done. About to call do-mine."
         :: mine the next nonce
         (do-mine (atom-to-digest:tip5:zeke dig.command))
       ::
