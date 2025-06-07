@@ -300,14 +300,15 @@ pub fn bpdvr(a: &[Belt], b: &[Belt], q: &mut [Belt], res: &mut [Belt]) {
     q.fill(Belt(0));
     res.fill(Belt(0));
 
-    let a_end = a.degree() as usize;
-    let mut r = a[0..(a_end + 1)].to_vec();
-
+    let deg_a = a.degree();
     let deg_b = b.degree();
+    let a_end = deg_a as usize;
+
+    let mut r = a[0..(a_end + 1)].to_vec();
 
     let mut i = a_end;
     let end_b = deg_b as usize;
-    let mut deg_r = a.degree();
+    let mut deg_r = deg_a;
     let mut q_index = deg_r.saturating_sub(deg_b);
 
     while deg_r >= deg_b {
@@ -315,13 +316,13 @@ pub fn bpdvr(a: &[Belt], b: &[Belt], q: &mut [Belt], res: &mut [Belt]) {
         q[q_index as usize] = coeff;
         for k in 0..(deg_b + 1) {
             let index = k as usize;
-            if k <= a_end as u32 && k < b.len() as u32 && k <= (i as u32) {
+            if i >= index {
                 r[i - index] = r[i - index] - coeff * b[end_b - index];
             }
         }
         deg_r = deg_r.saturating_sub(1);
         q_index = q_index.saturating_sub(1);
-        if deg_r == 0 && r[0] == 0 {
+        if deg_r == 0 && r[0] == Belt(0) {
             break;
         }
         i -= 1;
