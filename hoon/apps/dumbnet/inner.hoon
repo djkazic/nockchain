@@ -220,8 +220,6 @@
         ?>  ?=(%fact -.cause)
         (handle-fact wir eny our now p.cause)
       ==
-    ::  possibly update timestamp on candidate block for mining
-    =.  m.k  (update-timestamp:min now)
     effs^k
     ::
     ::  +heard-genesis-block: check if block is a genesis block and decide whether to keep it
