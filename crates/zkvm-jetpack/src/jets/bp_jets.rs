@@ -152,6 +152,42 @@ pub fn bp_hadamard_jet(context: &mut Context, subject: Noun) -> Result {
     Ok(res_cell)
 }
 
+pub fn bpdvr_jet(context: &mut Context, subject: Noun) -> Result {
+    let sam = slot(subject, 6)?;
+    let ba = slot(sam, 2)?;
+    let bb = slot(sam, 3)?;
+
+    let (Ok(ba_poly_slice), Ok(bb_poly_slice)) =
+        (BPolySlice::try_from(ba), BPolySlice::try_from(bb))
+    else {
+        return jet_err();
+    };
+    if bb_poly_slice.is_zero() {
+        return jet_err();
+    }
+
+    let deg_ba = ba_poly_slice.degree();
+    let deg_bb = bb_poly_slice.degree();
+    let quotient_len = (deg_ba.saturating_sub(deg_bb) + 1) as usize;
+    let remainder_len = (deg_bb.saturating_sub(1) + 1) as usize;
+    let (res_quotient_atom, res_quotient_slice): (IndirectAtom, &mut [Belt]) =
+        new_handle_mut_slice(&mut context.stack, Some(quotient_len));
+    let (res_remainder_atom, res_remainder_slice): (IndirectAtom, &mut [Belt]) =
+        new_handle_mut_slice(&mut context.stack, Some(remainder_len));
+
+    bpdvr(
+        ba_poly_slice.0,
+        bb_poly_slice.0,
+        res_quotient_slice,
+        res_remainder_slice,
+    );
+
+    let quotient_noun = finalize_poly(&mut context.stack, Some(res_quotient_slice.len()), res_quotient_atom);
+    let remainder_noun = finalize_poly(&mut context.stack, Some(res_remainder_slice.len()), res_remainder_atom);
+
+    Ok(T(&mut context.stack, &[quotient_noun, remainder_noun]))
+}
+
 pub fn bp_ntt_jet(context: &mut Context, subject: Noun) -> Result {
     let sam = slot(subject, 6)?;
     let bp = slot(sam, 2)?;

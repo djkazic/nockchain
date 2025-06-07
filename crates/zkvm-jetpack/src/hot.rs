@@ -545,6 +545,20 @@ pub const BASE_POLY_JETS: &[HotEntry] = &[
         1,
         bp_hadamard_jet,
     ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"bpdvr"),
+        ],
+        1,
+        bpdvr_jet,
+    ),
 ];
 
 pub const ZTD_JETS: &[HotEntry] = &[(
