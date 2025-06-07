@@ -25,7 +25,7 @@ use crate::noun::slab::NounSlab;
 
 use driver::{IOAction, IODriverFn, NockAppHandle, PokeResult};
 use metrics::*;
-use wire::WireRepr;
+use wire::{WireRepr, Wire};
 
 use futures::stream::StreamExt;
 use signal_hook::consts::signal::*;
@@ -49,6 +49,34 @@ pub const EXIT_SIGINT: usize = 130;
 pub const EXIT_SIGQUIT: usize = 131;
 /// SIGTERM: Termination signal from OS or process manager
 pub const EXIT_SIGTERM: usize = 143;
+
+pub enum MiningWire {
+    Mined,
+    Candidate,
+    SetPubKey,
+    Enable,
+}
+
+impl MiningWire {
+    pub fn verb(&self) -> &'static str {
+        match self {
+            MiningWire::Mined => "mined",
+            MiningWire::SetPubKey => "setpubkey",
+            MiningWire::Candidate => "candidate",
+            MiningWire::Enable => "enable",
+        }
+    }
+}
+
+impl Wire for MiningWire {
+    const VERSION: u64 = 1;
+    const SOURCE: &'static str = "miner";
+
+    fn to_wire(&self) -> WireRepr {
+        let tags = vec![self.verb().into()];
+        WireRepr::new(MiningWire::SOURCE, MiningWire::VERSION, tags)
+    }
+}
 
 pub struct NockApp {
     /// Nock kernel
@@ -547,7 +575,14 @@ impl NockApp {
                 wire,
                 poke,
                 ack_channel,
-            } => self.handle_poke(wire, poke, ack_channel).await,
+            } => {
+                if wire.source == MiningWire::SOURCE && wire.tags.contains(&MiningWire::Candidate.verb().into()) {
+                    info!("New mining candidate received. Signalling previous mining attempt to abort.");
+                    // This calls the cancel method on the shared Arc<AtomicIsize>
+                    self.kernel.serf.cancel_token.cancel();
+                }
+                self.handle_poke(wire, poke, ack_channel).await
+            },
             IOAction::Peek {
                 path,
                 result_channel,
