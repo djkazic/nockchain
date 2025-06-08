@@ -790,6 +790,10 @@ impl Kernel {
     pub async fn create_state_bytes(&self) -> Result<Vec<u8>> {
         self.serf.create_state_bytes().await
     }
+
+    pub async fn stop(&mut self) {
+        let _ = self.serf.stop().await;
+    }
 }
 
 /// Represents the Serf, which maintains context and provides an interface to
