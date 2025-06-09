@@ -104,13 +104,7 @@ mod tests {
 
         let tuple2 = T(
             &mut slab,
-            &[
-                a1.as_noun(),
-                a2.as_noun(),
-                a3.as_noun(),
-                a4.as_noun(),
-                a5.as_noun(),
-            ],
+            &[a1.as_noun(), a2.as_noun(), a3.as_noun(), a4.as_noun(), a5.as_noun()],
         );
         let expected2 = "6UkUko9WTwwR6VVRXwPQpUy5pswdvNtoyHspY5n9nLVnBxzAgEyMwPR";
         let result2 = tip5_hash_to_base58(tuple2).unwrap_or_else(|err| {

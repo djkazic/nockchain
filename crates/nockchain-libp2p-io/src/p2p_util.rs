@@ -290,10 +290,7 @@ impl MessageTracker {
             NockchainDataRequest::BlockByHeight(height) => {
                 if height >= self.first_negative {
                     metrics.block_request_cache_negative.increment();
-                    trace!(
-                        "Request for block height not yet seen by cache, height = {:?}",
-                        height
-                    );
+                    trace!("Request for block height not yet seen by cache, height = {:?}", height);
                     Ok(CacheResponse::NegativeCached)
                 } else if let Some(cached_block) = self.block_cache.get(&height) {
                     trace!("found cached block request by height={:?}", height);

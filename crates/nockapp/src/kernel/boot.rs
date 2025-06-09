@@ -14,7 +14,7 @@ use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{fmt, EnvFilter};
 
-const DEFAULT_SAVE_INTERVAL: u64 = 30000;
+const DEFAULT_SAVE_INTERVAL: u64 = 60000;
 const DEFAULT_LOG_FILTER: &str = "info,slogger=trace";
 
 #[derive(Parser, Debug, Clone)]

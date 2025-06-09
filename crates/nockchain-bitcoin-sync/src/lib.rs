@@ -129,12 +129,7 @@ pub fn bitcoin_watcher_driver(
                         Atom::from_bytes(&mut poke_slab, &set_genesis_seal_byts).as_noun();
                     let poke_noun = T(
                         &mut poke_slab,
-                        &[
-                            D(tas!(b"command")),
-                            set_genesis_seal,
-                            block_height_noun,
-                            seal_noun,
-                        ],
+                        &[D(tas!(b"command")), set_genesis_seal, block_height_noun, seal_noun],
                     );
                     poke_slab.set_root(poke_noun);
 
@@ -179,12 +174,7 @@ pub fn bitcoin_watcher_driver(
                         Atom::from_bytes(&mut poke_slab, &set_genesis_seal_byts).as_noun();
                     let poke_noun = T(
                         &mut poke_slab,
-                        &[
-                            D(tas!(b"command")),
-                            set_genesis_seal,
-                            block_height_noun,
-                            seal_noun,
-                        ],
+                        &[D(tas!(b"command")), set_genesis_seal, block_height_noun, seal_noun],
                     );
                     poke_slab.set_root(poke_noun);
 
@@ -312,9 +302,7 @@ fn block_hash_to_belts<A: NounAllocator>(allocator: &mut A, hash: &BlockHash) ->
 
     let mut tuple_elements = Vec::new();
 
-    for digit in [
-        digit_0, digit_1, digit_2, digit_3, digit_4, digit_5, digit_6, digit_7,
-    ] {
+    for digit in [digit_0, digit_1, digit_2, digit_3, digit_4, digit_5, digit_6, digit_7] {
         tuple_elements.push(Atom::new(allocator, digit).as_noun());
     }
 

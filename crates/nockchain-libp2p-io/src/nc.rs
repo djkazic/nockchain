@@ -14,7 +14,7 @@ use libp2p::peer_store::Store;
 use libp2p::request_response::Event::*;
 use libp2p::request_response::Message::*;
 use libp2p::request_response::{self};
-use libp2p::swarm::{ConnectionId, SwarmEvent};
+use libp2p::swarm::{ConnectionId, DialError, SwarmEvent};
 use libp2p::{
     allow_block_list, connection_limits, memory_connection_limits, Multiaddr, PeerId, Swarm,
 };
@@ -30,6 +30,7 @@ use nockvm_macros::tas;
 use serde_bytes::ByteBuf;
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::{AbortHandle, JoinError, JoinSet};
+use tokio::time::{Duration, MissedTickBehavior};
 use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::config::LibP2PConfig;
@@ -79,11 +80,7 @@ impl Wire for Libp2pWire {
     const SOURCE: &'static str = "libp2p";
 
     fn to_wire(&self) -> WireRepr {
-        let tags = vec![
-            self.verb().into(),
-            "peer-id".into(),
-            self.peer_id().to_base58().into(),
-        ];
+        let tags = vec![self.verb().into(), "peer-id".into(), self.peer_id().to_base58().into()];
         WireRepr::new(Libp2pWire::SOURCE, Libp2pWire::VERSION, tags)
     }
 }
@@ -173,11 +170,12 @@ pub fn make_libp2p_driver(
     initial_peers: &[Multiaddr],
     force_peers: &[Multiaddr],
     equix_builder: equix::EquiXBuilder,
+    chain_interval: Duration,
     init_complete_tx: Option<tokio::sync::oneshot::Sender<()>>,
 ) -> IODriverFn {
     let initial_peers = Vec::from(initial_peers);
     let force_peers = Vec::from(force_peers);
-    Box::new(|handle| {
+    Box::new(move |handle| {
         let metrics = Arc::new(
             NockchainP2PMetrics::register(gnort::global_metrics_registry())
                 .expect("Failed to register metrics!"),
@@ -193,12 +191,7 @@ pub fn make_libp2p_driver(
             let request_high_threshold = libp2p_config.request_high_threshold;
             let peer_status_log_interval = libp2p_config.peer_status_log_interval_secs();
             let mut swarm = match crate::p2p::start_swarm(
-                libp2p_config,
-                keypair,
-                bind,
-                allowed,
-                limits,
-                memory_limits,
+                libp2p_config, keypair, bind, allowed, limits, memory_limits,
             ) {
                 Ok(swarm) => swarm,
                 Err(e) => {
@@ -218,6 +211,9 @@ pub fn make_libp2p_driver(
             let mut kad_bootstrap = tokio::time::interval(kademlia_bootstrap_interval);
             let mut force_peer_dial = tokio::time::interval(force_peer_dial_interval);
             let mut reset_request_counts = tokio::time::interval(request_high_reset);
+            let mut nockchain_timer = tokio::time::interval(chain_interval);
+            nockchain_timer.set_missed_tick_behavior(MissedTickBehavior::Skip);
+            let nockchain_timer_mutex = Arc::new(Mutex::new(()));
             let (traffic_handle, effect_handle) = handle.dup();
             let traffic_cop = traffic_cop::TrafficCop::new(traffic_handle, &mut join_set);
 
@@ -229,7 +225,14 @@ pub fn make_libp2p_driver(
             }
             let mut peer_status_log = tokio::time::interval(peer_status_log_interval);
             loop {
+                let timer_fut = async {
+                    let _ = nockchain_timer.tick().await;
+                    nockchain_timer_mutex.clone().lock_owned().await
+                };
                 tokio::select! {
+                    guard = timer_fut => {
+                        join_set.spawn("timer".to_string(), send_timer_poke(guard, traffic_cop.clone()))
+                    }
                     _ = peer_status_log.tick() => {
                         log_peer_status(&mut swarm, &metrics).await;
                     },
@@ -293,8 +296,14 @@ pub fn make_libp2p_driver(
                                     handle_request_response(peer, connection_id, message, swarm_tx_clone, &mut equix_builder_clone, local_peer_id, traffic_clone, metrics.clone(), message_tracker_clone, request_high_threshold).await
                                 });
                             },
-                            SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
-                                trace!("Failed outgoing connection to {:?}: {}", peer_id, error);
+                            SwarmEvent::Behaviour(NockchainEvent::RequestResponse(OutboundFailure { peer, error, ..})) => {
+                                log_outbound_failure(peer, error, metrics.clone());
+                            }
+                            SwarmEvent::Behaviour(NockchainEvent::RequestResponse(InboundFailure { peer, error, .. })) => {
+                                log_inbound_failure(peer, error, metrics.clone());
+                            }
+                            SwarmEvent::OutgoingConnectionError { error, .. } => {
+                                log_dial_error(error);
                             },
                             SwarmEvent::IncomingConnection {
                                 local_addr,
@@ -510,6 +519,19 @@ impl NockchainResponse {
 //     // get peer ip address
 //     let peer_ip = peer_id.to_base58();
 // }
+//
+async fn send_timer_poke(
+    guard: tokio::sync::OwnedMutexGuard<()>,
+    traffic_cop: traffic_cop::TrafficCop,
+) -> Result<(), NockAppError> {
+    let mut slab = NounSlab::new();
+    let timer_noun = T(&mut slab, &[D(tas!(b"command")), D(tas!(b"timer")), D(0)]);
+    slab.set_root(timer_noun);
+    let wire = nockapp::drivers::timer::TimerWire::Tick.to_wire();
+    traffic_cop.poke_high_priority(wire, slab).await?;
+    drop(guard);
+    Ok(())
+}
 
 async fn handle_effect(
     noun_slab: NounSlab,
@@ -544,6 +566,7 @@ async fn handle_effect(
             }
 
             let gossip_request = NockchainRequest::new_gossip(&tail_slab);
+            debug!("Gossiping to {} peers", connected_peers.len());
             for peer_id in connected_peers.clone() {
                 let gossip_request_clone = gossip_request.clone();
                 swarm_tx
@@ -583,14 +606,13 @@ async fn handle_effect(
                 connected_peers.clone()
             };
 
+            debug!("Sending request to {} peers", target_peers.len());
+
             for peer_id in target_peers {
                 let local_peer_id_clone = local_peer_id;
                 let mut equix_builder_clone = equix_builder.clone();
                 let request = NockchainRequest::new_request(
-                    &mut equix_builder_clone,
-                    &local_peer_id_clone,
-                    &peer_id,
-                    &noun_slab,
+                    &mut equix_builder_clone, &local_peer_id_clone, &peer_id, &noun_slab,
                 );
                 swarm_tx
                     .send(SwarmAction::SendRequest { peer_id, request })
@@ -697,10 +719,7 @@ async fn handle_effect(
                     if tracker.first_negative <= block_height {
                         metrics.highest_block_height_seen.swap(block_height as f64);
                         tracker.first_negative = block_height + 1;
-                        trace!(
-                            "Setting tracker.first_negative to {:?}",
-                            tracker.first_negative
-                        );
+                        trace!("Setting tracker.first_negative to {:?}", tracker.first_negative);
                     }
                 }
             } else if seen_type.eq_bytes(b"tx") {
@@ -1474,8 +1493,7 @@ mod tests {
             } => {
                 // Test successful verification
                 let result = valid_request.verify_pow(
-                    &mut builder,
-                    &remote_peer_id, // Note: peers are swapped for verification
+                    &mut builder, &remote_peer_id, // Note: peers are swapped for verification
                     &local_peer_id,
                 );
                 assert!(result.is_ok(), "Valid PoW should verify successfully");
@@ -1492,8 +1510,7 @@ mod tests {
 
                 // Test failed verification with wrong peer order
                 let result = valid_request.verify_pow(
-                    &mut builder,
-                    &local_peer_id, // Wrong order - not swapped
+                    &mut builder, &local_peer_id, // Wrong order - not swapped
                     &remote_peer_id,
                 );
                 assert!(result.is_err(), "Wrong peer order should fail verification");
@@ -2044,10 +2061,7 @@ fn dial_peers(
     for peer in peers {
         let peer = peer.clone();
         debug!("Dialing peer: {}", peer);
-        let _ = swarm.dial(peer.clone()).map_err(|e| {
-            error!("Failed to dial peer {}: {}", peer, e);
-            ()
-        });
+        let _ = swarm.dial(peer.clone()).map_err(log_dial_error);
     }
     Ok(())
 }
@@ -2200,4 +2214,79 @@ mod traffic_cop {
             }
         }
     }
+}
+
+fn log_dial_error(error: DialError) {
+    match error {
+        DialError::NoAddresses => debug!("No addresses to dial"),
+        DialError::LocalPeerId { address } => {
+            debug!("Tried to dial ourselves at {}", address.to_string())
+        }
+
+        DialError::Aborted => trace!("Dial aborted"),
+        DialError::WrongPeerId { obtained, address } => {
+            warn!(
+                "Wrong peer id {} from address {}",
+                obtained,
+                address.to_string()
+            )
+        }
+        DialError::Denied { cause } => debug!("Outgoing connection denied: {}", cause),
+        DialError::DialPeerConditionFalse(_) => debug!("Dial peer condition false"),
+        DialError::Transport(addr_errs) => {
+            for (addr, error) in addr_errs {
+                warn!("Failed to dial address {}: {}", addr.to_string(), error);
+            }
+        }
+    }
+}
+
+fn log_outbound_failure(
+    peer: PeerId,
+    error: request_response::OutboundFailure,
+    metrics: Arc<NockchainP2PMetrics>,
+) {
+    metrics.request_failed.increment();
+    match error {
+        request_response::OutboundFailure::DialFailure => {
+            debug!("Failed to dial peer {} for request", peer)
+        }
+        request_response::OutboundFailure::Timeout => debug!("Request to peer {} timed out", peer),
+        request_response::OutboundFailure::ConnectionClosed => {
+            debug!("Connection to peer {} closed with request pending", peer)
+        }
+        request_response::OutboundFailure::Io(err) => {
+            warn!("Error making request to peer {}: {}", peer, err)
+        }
+        request_response::OutboundFailure::UnsupportedProtocols => {
+            debug!("Unsupported protocol when making request to peer {}", peer)
+        }
+    }
+}
+
+fn log_inbound_failure(
+    peer: PeerId,
+    error: request_response::InboundFailure,
+    metrics: Arc<NockchainP2PMetrics>,
+) {
+    if let request_response::InboundFailure::ResponseOmission = error {
+        metrics.response_dropped.increment();
+    } else {
+        metrics.response_failed_not_dropped.increment();
+    }
+    match error {
+        request_response::InboundFailure::ResponseOmission => trace!(
+            "Response to peer {} refused, likely load shedding or simply no data for request", peer
+        ),
+        request_response::InboundFailure::Timeout => warn!("Response to peer {} timed out", peer),
+        request_response::InboundFailure::Io(err) => {
+            warn!("Error responding to peer {}: {}", peer, err)
+        }
+        request_response::InboundFailure::ConnectionClosed => {
+            debug!("Connection to peer {} closed with response pending", peer)
+        }
+        request_response::InboundFailure::UnsupportedProtocols => {
+            debug!("Unsupported protocol when responding to peer {}", peer)
+        }
+    };
 }

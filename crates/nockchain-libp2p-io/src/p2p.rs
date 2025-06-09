@@ -166,10 +166,7 @@ pub fn start_swarm(
         })
         .with_dns_config(resolver_config, resolver_opts)
         .with_behaviour(NockchainBehaviour::pre_new(
-            libp2p_config,
-            allowed,
-            limits,
-            memory_limits,
+            libp2p_config, allowed, limits, memory_limits,
         ))?
         .with_swarm_config(|cfg| cfg.with_idle_connection_timeout(swarm_idle_timeout))
         .with_connection_timeout(connection_timeout)

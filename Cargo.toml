@@ -161,7 +161,6 @@ smallvec = "1.13.2"
 strum = { version = "0.26", features = ["derive"] }
 termcolor = "1.4"
 testcontainers = { git = "https://github.com/bitemyapp/testcontainers-rs.git", rev = "54851fd9faf9b9cded9d681b46f87c056880d870" }
-
 thiserror = "2.0.11"
 tokio = { version = "1.32", features = [
     "fs",
@@ -173,6 +172,7 @@ tokio = { version = "1.32", features = [
     "signal",
 ] }
 tokio-util = "0.7.11"
+tower-http = { version = "0.6", features = ["fs"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.18", features = [
     "ansi",
@@ -182,6 +182,16 @@ tracing-subscriber = { version = "0.3.18", features = [
 vergen = "8.3.2"
 void = "1.0.2"
 num_cpus = "1.16.0"
+# Let's Encrypt and HTTPS support
+instant-acme = "0.7.2"
+axum-server = { version = "0.7.2", features = ["tls-rustls"] }
+rustls = "0.23.0"
+rustls-pemfile = "2.0.0"
+tokio-rustls = "0.26.0"
+x509-parser = "0.16.0"
+rcgen = "0.13.0"
+webpki-roots = "0.26.0"
+
 
 [profile.dev]
 opt-level = 0

@@ -258,11 +258,7 @@ async fn set_mining_key(
         Atom::from_value(&mut set_mining_key_slab, pubkey).expect("Failed to create pubkey atom");
     let set_mining_key_poke = T(
         &mut set_mining_key_slab,
-        &[
-            D(tas!(b"command")),
-            set_mining_key.as_noun(),
-            pubkey_cord.as_noun(),
-        ],
+        &[D(tas!(b"command")), set_mining_key.as_noun(), pubkey_cord.as_noun()],
     );
     set_mining_key_slab.set_root(set_mining_key_poke);
 
@@ -301,11 +297,7 @@ async fn set_mining_key_advanced(
 
     let set_mining_key_poke = T(
         &mut set_mining_key_slab,
-        &[
-            D(tas!(b"command")),
-            set_mining_key_adv.as_noun(),
-            configs_list,
-        ],
+        &[D(tas!(b"command")), set_mining_key_adv.as_noun(), configs_list],
     );
     set_mining_key_slab.set_root(set_mining_key_poke);
 
@@ -322,11 +314,7 @@ async fn enable_mining(handle: &NockAppHandle, enable: bool) -> Result<PokeResul
         .expect("Failed to create enable-mining atom");
     let enable_mining_poke = T(
         &mut enable_mining_slab,
-        &[
-            D(tas!(b"command")),
-            enable_mining.as_noun(),
-            D(if enable { 0 } else { 1 }),
-        ],
+        &[D(tas!(b"command")), enable_mining.as_noun(), D(if enable { 0 } else { 1 })],
     );
     enable_mining_slab.set_root(enable_mining_poke);
     handle

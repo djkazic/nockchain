@@ -96,25 +96,13 @@ pub fn evaluate_deep_jet(context: &mut Context, subject: Noun) -> Result<Noun, J
         // Process first row trace columns
         let denom = fsub_(&omega_pow, &deep_challenge);
         (acc, num) = process_belt(
-            current_trace_elems,
-            &trace_evaluations.0,
-            &weights.0,
-            full_width,
-            num,
-            &denom,
-            &acc,
+            current_trace_elems, &trace_evaluations.0, &weights.0, full_width, num, &denom, &acc,
         );
 
         // Process second row trace columns (shifted by omicron)
         let denom = fsub_(&omega_pow, &fmul_(&deep_challenge, &omicron));
         (acc, num) = process_belt(
-            current_trace_elems,
-            &trace_evaluations.0,
-            &weights.0,
-            full_width,
-            num,
-            &denom,
-            &acc,
+            current_trace_elems, &trace_evaluations.0, &weights.0, full_width, num, &denom, &acc,
         );
 
         total_full_width += full_width;
@@ -130,25 +118,13 @@ pub fn evaluate_deep_jet(context: &mut Context, subject: Noun) -> Result<Noun, J
         // Process first row trace columns with new_comp_eval
         let denom = fsub_(&omega_pow, &new_comp_eval);
         (acc, num) = process_belt(
-            current_trace_elems,
-            &trace_evaluations.0,
-            &weights.0,
-            full_width,
-            num,
-            &denom,
-            &acc,
+            current_trace_elems, &trace_evaluations.0, &weights.0, full_width, num, &denom, &acc,
         );
 
         // Process second row trace columns with new_comp_eval (shifted by omicron)
         let denom = fsub_(&omega_pow, &fmul_(&new_comp_eval, &omicron));
         (acc, num) = process_belt(
-            current_trace_elems,
-            &trace_evaluations.0,
-            &weights.0,
-            full_width,
-            num,
-            &denom,
-            &acc,
+            current_trace_elems, &trace_evaluations.0, &weights.0, full_width, num, &denom, &acc,
         );
 
         total_full_width += full_width;

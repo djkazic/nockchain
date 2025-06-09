@@ -421,6 +421,7 @@ pub async fn init_with_kernel(
         &initial_peer_multiaddrs,
         &force_peers,
         equix_builder,
+        config::CHAIN_INTERVAL,
         Some(libp2p_init_tx),
     );
     nockapp.add_io_driver(libp2p_driver).await;
@@ -453,20 +454,6 @@ pub async fn init_with_kernel(
 
     nockapp
         .add_io_driver(nockapp::npc_listener_driver(listener))
-        .await;
-
-    // set up timer
-    let mut timer_slab = NounSlab::new();
-    let timer_noun = T(
-        &mut timer_slab,
-        &[D(tas!(b"command")), D(tas!(b"timer")), D(0)],
-    );
-    timer_slab.set_root(timer_noun);
-    nockapp
-        .add_io_driver(nockapp::timer_driver(
-            config::CHAIN_INTERVAL_SECS,
-            timer_slab,
-        ))
         .await;
 
     nockapp.add_io_driver(nockapp::exit_driver()).await;

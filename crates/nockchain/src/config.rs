@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::time::Duration;
 
 use clap::{arg, command, value_parser, ArgAction, Parser};
 use nockchain_bitcoin_sync::BitcoinRPCConnection;
@@ -27,7 +28,7 @@ pub const TESTNET_BACKBONE_NODES: &[&str] = &[];
 pub const REALNET_BACKBONE_NODES: &[&str] = &["/dnsaddr/nockchain-backbone.zorp.io"];
 
 /** How often we should affirmatively ask other nodes for their heaviest chain */
-pub const CHAIN_INTERVAL_SECS: u64 = 20;
+pub const CHAIN_INTERVAL: Duration = Duration::from_secs(20);
 
 /// The height of the bitcoin block that we want to sync our genesis block to
 /// Currently, this is the height of an existing block for testing. It will be

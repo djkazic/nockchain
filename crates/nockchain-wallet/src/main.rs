@@ -465,9 +465,7 @@ impl Wallet {
         Self::wallet(
             "scan",
             &[
-                master_pubkey_noun,
-                search_depth_noun,
-                include_timelocks_noun,
+                master_pubkey_noun, search_depth_noun, include_timelocks_noun,
                 include_multisig_noun,
             ],
             Operation::Poke,
@@ -835,10 +833,7 @@ async fn main() -> Result<(), NockAppError> {
             include_timelocks,
             include_multisig,
         } => Wallet::scan(
-            master_pubkey,
-            *search_depth,
-            *include_timelocks,
-            *include_multisig,
+            master_pubkey, *search_depth, *include_timelocks, *include_multisig,
         ),
         Commands::ListNotes => Wallet::list_notes(),
         Commands::ListNotesByPubkey { pubkey } => {

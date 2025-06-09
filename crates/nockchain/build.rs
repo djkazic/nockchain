@@ -1,10 +1,7 @@
 fn main() {
     // List of Bazel built-in stamping variables to embed
     let bazel_vars = [
-        "BUILD_EMBED_LABEL",
-        "BUILD_HOST",
-        "BUILD_USER",
-        "BUILD_TIMESTAMP",
+        "BUILD_EMBED_LABEL", "BUILD_HOST", "BUILD_USER", "BUILD_TIMESTAMP",
         "FORMATTED_DATE",
         // You can add more built-in variables or your own STABLE_ variables as needed
     ];

@@ -127,8 +127,8 @@
 +$  state
   $:  %0
       =balance
-      hash-to-name=(z-map:zo hash:transact nname:transact)  ::  hash of note -> name of note
-      name-to-hash=(z-map:zo nname:transact hash:transact)  ::  name of note -> hash of note
+      hash-to-name=(z-map:zo hash:transact nname:transact)  ::  hash of note -> name of note (TODO: deprecated)
+      name-to-hash=(z-map:zo nname:transact hash:transact)  ::  name of note -> hash of note (TODO: deprecated)
       receive-address=lock:transact
       =master
       =keys
@@ -676,12 +676,27 @@
       (~(got z-by:zo balance.state) name)
     ~|("note not found: {<name>}" !!)
   ::
+  ::  TODO: way too slow, need a better way to do this or
+  ::  remove entirely in favor of requiring note names in
+  ::  the causes where necessary.
+  ++  find-name-by-hash
+    |=  has=hash:transact
+    ^-  (unit nname:transact)
+    =/  notes=(list [name=nname:transact note=nnote:transact])
+      ~(tap z-by:zo balance.state)
+    |-
+    ?~  notes  ~
+    ?:  =((hash:nnote:transact note.i.notes) has)
+      `name.i.notes
+    $(notes t.notes)
+  ::
   ++  get-note-from-hash
     |=  has=hash:transact
     ^-  nnote:transact
-    =/  name=nname:transact
-      (~(got z-by:zo hash-to-name.state) has)
-    (get-note name)
+    =/  name=(unit nname:transact)  (find-name-by-hash has)
+    ?~  name
+      ~|("note with hash {<(to-b58:hash:transact has)>} not found in balance" !!)
+    (get-note u.name)
   ::
   ++  generate-pid
     |=  peek-type=?(%balance %block)
@@ -880,25 +895,44 @@
   """
   (make-markdown-effect nodes)
 ::
+++  display-note-cord
+  |=  note=nnote:transact
+  ^-  @t
+  %^  cat  3
+   ;:  (cury cat 3)
+      '''
+
+      ## details
+
+      '''
+      '- name: '
+      =+  (to-b58:nname:transact name.note)
+      :((cury cat 3) '[' first ' ' last ']')
+      '\0a- assets: '
+      (scot %ud assets.note)
+      '\0a- source: '
+      (to-b58:hash:transact p.source.note)
+      '\0a## lock'
+      '\0a- m: '
+      (scot %ud m.lock.note)
+      '\0a- signers: '
+    ==
+  %-  crip
+  %+  join  ' '
+  (serialize-lock lock.note)
+::
+++  serialize-lock
+  |=  =lock:transact
+  ^-  (list @t)
+  ~+
+  pks:(to-b58:lock:transact lock)
+::
 ++  display-note
   |=  note=nnote:transact
   ^-  markdown:m
   %-  need
   %-  de:md
-  %-  crip
-  """
-  ## details
-
-  - name: {<(to-b58:nname:transact name.note)>}
-  - assets: {<assets.note>}
-  - source: {<source.note>}
-
-  ## lock
-
-  - m: {<m.lock.note>}
-  - signers: {<(to-b58:signers:lock:transact lock.note)>}
-
-  """
+  (display-note-cord note)
 ::
 ++  show
   |=  [=state =path]
@@ -1081,20 +1115,6 @@
           [[%exit 0]~ state]
         =.  balance.state  u.u.balance-result
         %-  (debug "balance state updated!")
-        ::  count the number of notes in the balance
-        =/  note-count=@ud
-          (lent ~(tap z-by:zo balance.state))
-        %-  (debug "note count: {<note-count>}")
-        =.  name-to-hash.state
-          %-  ~(run z-by:zo balance.state)
-          |=  not=nnote:transact
-          ^-  hash:transact
-          (hash:nnote:transact not)
-        =.  hash-to-name.state
-          %-  ~(gas z-by:zo *(z-map:zo hash:transact nname:transact))
-          %+  turn  ~(tap z-by:zo name-to-hash.state)
-          |=  [name=nname:transact =hash:transact]
-          [hash name]
         ::  move each command from balance phase to ready phase
         =/  balance-commands=(list [pid=@ud [phase=?(%block %balance %ready) wrapped=cause]])
           %+  skim  ~(tap z-by:zo pending-commands.state)
@@ -1576,60 +1596,48 @@
     |=  =cause
     ?>  ?=(%list-notes -.cause)
     %-  (debug "list-notes")
-    =/  notes=(list [name=nname:transact note=nnote:transact])
-      %+  sort  ~(tap z-by:zo balance.state)
-      |=  $:  a=[name=nname:transact note=nnote:transact]
-              b=[name=nname:transact note=nnote:transact]
-          ==
-      (gth assets.note.a assets.note.b)
-    =/  nodes=markdown:m
-      %+  welp
-      %-  need
-      %-  de:md
+    :_  state
+    :~  :-  %markdown
       %-  crip
+      %+  welp
       """
       ## wallet notes
 
       """
       %-  zing
-      %+  turn  notes
-      |=  [* =nnote:transact]
-      (display-note nnote)
-    :_  state
-    ~[(make-markdown-effect nodes) [%exit 0]]
+      %+  turn  ~(val z-by:zo balance.state)
+      |=  =nnote:transact
+      %-  trip
+      (display-note-cord nnote)
+      ::
+      [%exit 0]
+    ==
   ::
   ++  do-list-notes-by-pubkey
     |=  =cause
-    ~&  "list-notes-by-pubkey"
     ?>  ?=(%list-notes-by-pubkey -.cause)
-    ~&  "list-notes-by-pubkey: {<pubkey.cause>}"
     =/  target-pubkey=schnorr-pubkey:transact
       (from-b58:schnorr-pubkey:transact pubkey.cause)
     =/  matching-notes=(list [name=nname:transact note=nnote:transact])
       %+  skim  ~(tap z-by:zo balance.state)
       |=  [name=nname:transact note=nnote:transact]
       (~(has z-in:zo pubkeys.lock.note) target-pubkey)
-    =/  sorted-notes=(list [name=nname:transact note=nnote:transact])
-      %+  sort  matching-notes
-      |=  $:  a=[name=nname:transact note=nnote:transact]
-              b=[name=nname:transact note=nnote:transact]
-          ==
-      (gth assets.note.a assets.note.b)
-    =/  nodes=markdown:m
-      %+  welp
-      %-  need
-      %-  de:md
-      %-  crip
-      """
-      ## wallet notes for pubkey {<(to-b58:schnorr-pubkey:transact target-pubkey)>}
-
-      """
-      %-  zing
-      %+  turn  sorted-notes
-      |=  [* =nnote:transact]
-      (display-note nnote)
     :_  state
-    ~[(make-markdown-effect nodes) [%raw sorted-notes] [%exit 0]]
+    :~  :-  %markdown
+        %-  crip
+        %+  welp
+          """
+          ## wallet notes for pubkey {<(to-b58:schnorr-pubkey:transact target-pubkey)>}
+
+          """
+        %-  zing
+        %+  turn  matching-notes
+        |=  [* =nnote:transact]
+        %-  trip
+        (display-note-cord nnote)
+        ::
+        [%exit 0]
+    ==
   ::
   ++  do-simple-spend
     |=  =cause
@@ -2196,7 +2204,7 @@
         =/  parent-note-hash-b58=tape
           (trip (to-b58:hash:transact parent-note-hash))
         =/  parent-note-name=(unit nname:transact)
-          (~(get z-by:zo hash-to-name.state) parent-note-hash)
+          (find-name-by-hash:v parent-note-hash)
         ?~  parent-note-name
           :~
             :-  %text

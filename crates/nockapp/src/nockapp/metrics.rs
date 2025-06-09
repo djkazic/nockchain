@@ -16,6 +16,8 @@ metrics_struct![
     (serf_loop_get_kernel_state_slab, "nockapp.serf_loop.get_kernel_state_slab", TimingCount),
     (serf_loop_get_cold_state_slab, "nockapp.serf_loop.get_cold_state_slab", TimingCount),
     (serf_loop_checkpoint, "nockapp.serf_loop.checkpoint", TimingCount),
+    (serf_loop_noun_encode_cold_state, "nockapp.serf_loop.noun_encode_cold_state", TimingCount),
+    (serf_loop_jam_checkpoint, "nockapp.serf_loop.jam_checkpoint", TimingCount),
     (serf_loop_peek, "nockapp.serf_loop.peek", TimingCount),
     (serf_loop_poke, "nockapp.serf_loop.poke", TimingCount),
     (serf_loop_provide_metrics, "nockapp.serf_loop.provide_metrics", TimingCount),

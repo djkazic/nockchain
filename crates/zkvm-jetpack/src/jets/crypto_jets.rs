@@ -58,9 +58,7 @@ pub mod test {
 
         let params = T(
             &mut context.stack,
-            &[
-                out, algorithm, version, threads, mem_cost, time_cost, secret, extra,
-            ],
+            &[out, algorithm, version, threads, mem_cost, time_cost, secret, extra],
         );
         let password_byts = Byts([0x01; 32].to_vec());
         let password = password_byts.into_noun(&mut context.stack);
@@ -83,11 +81,7 @@ pub mod test {
 
         let parent_context = T(&mut context.stack, &[D(0), params, D(0)]);
         assert_jet_door(
-            &mut context,
-            argon2_jet,
-            inner,
-            parent_context,
-            expected_bytes,
+            &mut context, argon2_jet, inner, parent_context, expected_bytes,
         );
     }
 
@@ -109,9 +103,7 @@ pub mod test {
 
         let params = T(
             &mut context.stack,
-            &[
-                out, algorithm, version, threads, mem_cost, time_cost, secret, extra,
-            ],
+            &[out, algorithm, version, threads, mem_cost, time_cost, secret, extra],
         );
 
         let mut password_byts = Byts([0x01; 32].to_vec());
@@ -145,11 +137,7 @@ pub mod test {
 
         let parent_context = T(&mut context.stack, &[D(0), params, D(0)]);
         assert_jet_door(
-            &mut context,
-            argon2_jet,
-            inner,
-            parent_context,
-            expected_bytes,
+            &mut context, argon2_jet, inner, parent_context, expected_bytes,
         );
     }
 }

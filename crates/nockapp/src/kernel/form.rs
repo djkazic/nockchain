@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use crate::metrics::NockAppMetrics;
 use crate::noun::slab::NounSlab;
+use crate::JammedNoun;
 use blake3::{Hash, Hasher};
 use byteorder::{LittleEndian, WriteBytesExt};
 use nockvm::hamt::Hamt;
@@ -408,7 +409,9 @@ fn serf_loop(
                 };
             }
             SerfAction::Checkpoint { result } => {
-                let checkpoint = create_checkpoint(&mut serf, buffer_toggle.clone());
+                let metrics_checkpoint = serf.metrics.clone();
+                let checkpoint =
+                    create_checkpoint(&mut serf, buffer_toggle.clone(), &metrics_checkpoint);
                 //result.send(checkpoint).expect("Could not send checkpoint");
                 if result.send(checkpoint).is_err() {
                     debug!(
@@ -619,7 +622,11 @@ fn create_state_bytes(serf: &mut Serf) -> Result<Vec<u8>> {
     Ok(encoded)
 }
 
-fn create_checkpoint(serf: &mut Serf, buffer_toggle: Arc<AtomicBool>) -> JammedCheckpoint {
+fn create_checkpoint(
+    serf: &mut Serf,
+    buffer_toggle: Arc<AtomicBool>,
+    metrics: &Option<Arc<NockAppMetrics>>,
+) -> JammedCheckpoint {
     let version = serf.version;
     let ker_hash = serf.ker_hash;
     let event_num = serf.event_num.load(Ordering::SeqCst);
@@ -632,16 +639,25 @@ fn create_checkpoint(serf: &mut Serf, buffer_toggle: Arc<AtomicBool>) -> JammedC
         )
     });
     let cold = serf.context.cold;
+    let cold_noun_start = Instant::now();
+    let cold_noun = (cold).into_noun(serf.stack());
+    let cold_noun_elapsed = cold_noun_start.elapsed();
+
+    let cell = T(serf.stack(), &[ker_state, cold_noun]);
+
+    let jam_start = Instant::now();
+    let jam = JammedNoun::from_noun(serf.stack(), cell);
+    let jam_elapsed = jam_start.elapsed();
+
+    if let Some(metrics) = metrics {
+        metrics
+            .serf_loop_noun_encode_cold_state
+            .add_timing(&cold_noun_elapsed);
+        metrics.serf_loop_jam_checkpoint.add_timing(&jam_elapsed);
+    }
+
     let buff_index = buffer_toggle.load(Ordering::SeqCst);
-    JammedCheckpoint::new(
-        serf.stack(),
-        version,
-        buff_index,
-        ker_hash,
-        event_num,
-        &cold,
-        &ker_state,
-    )
+    JammedCheckpoint::new(version, buff_index, ker_hash, event_num, jam)
 }
 
 /// Represents a Sword kernel, containing a Serf and snapshot location.

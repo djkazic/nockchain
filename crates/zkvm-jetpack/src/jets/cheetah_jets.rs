@@ -157,15 +157,7 @@ fn f6_inv(f: &F6lt) -> Result<F6lt, JetErr> {
     let mut v = [Belt(0); 6];
     bpegcd(
         &f.0,
-        &[
-            Belt(bneg(7)),
-            Belt(0),
-            Belt(0),
-            Belt(0),
-            Belt(0),
-            Belt(0),
-            Belt(1),
-        ],
+        &[Belt(bneg(7)), Belt(0), Belt(0), Belt(0), Belt(0), Belt(0), Belt(1)],
         &mut d,
         &mut u,
         &mut v,
@@ -188,14 +180,7 @@ fn f6_add(f1: &F6lt, f2: &F6lt) -> F6lt {
 }
 
 fn f6_scal(s: Belt, f: &F6lt) -> F6lt {
-    F6lt([
-        f.0[0] * s,
-        f.0[1] * s,
-        f.0[2] * s,
-        f.0[3] * s,
-        f.0[4] * s,
-        f.0[5] * s,
-    ])
+    F6lt([f.0[0] * s, f.0[1] * s, f.0[2] * s, f.0[3] * s, f.0[4] * s, f.0[5] * s])
 }
 
 // TODO: Try karat3-square if performance is an issue

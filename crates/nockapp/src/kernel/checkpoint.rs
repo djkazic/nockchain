@@ -5,7 +5,7 @@ use blake3::{Hash, Hasher};
 use bytes::Bytes;
 use nockvm::jets::cold::{Cold, Nounable};
 use nockvm::mem::NockStack;
-use nockvm::noun::{Noun, T};
+use nockvm::noun::Noun;
 use nockvm_macros::tas;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -124,17 +124,12 @@ impl ExportedState {
 
 impl JammedCheckpoint {
     pub fn new(
-        stack: &mut NockStack,
         version: u32,
         buff_index: bool,
         ker_hash: Hash,
         event_num: u64,
-        cold: &Cold,
-        ker_state: &Noun,
+        jam: JammedNoun,
     ) -> Self {
-        let cold_noun = (*cold).into_noun(stack);
-        let cell = T(stack, &[*ker_state, cold_noun]);
-        let jam = JammedNoun::from_noun(stack, cell);
         let checksum = Self::checksum(event_num, &jam.0);
         Self {
             magic_bytes: tas!(b"CHKJAM"),

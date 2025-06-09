@@ -54,9 +54,7 @@ impl Nounable for Argon2Args {
         let typ_noun = make_tas(stack, typ).as_noun();
         T(
             stack,
-            &[
-                out, typ_noun, vers, threads, mem_cost, time_cost, secret, extra,
-            ],
+            &[out, typ_noun, vers, threads, mem_cost, time_cost, secret, extra],
         )
     }
     fn from_noun<A: NounAllocator>(stack: &mut A, params: &Noun) -> NounableResult<Self::Target> {
