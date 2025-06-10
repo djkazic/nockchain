@@ -28,21 +28,21 @@ pub fn produce_prover_hot_state() -> Vec<HotEntry> {
 }
 
 pub const ZKVM_TABLE_JETS: &[HotEntry] = &[
-    (
-        &[
-            K_138,
-            Left(b"one"),
-            Left(b"two"),
-            Left(b"tri"),
-            Left(b"qua"),
-            Left(b"pen"),
-            Left(b"memory-table"),
-            Left(b"funcs"),
-            Left(b"extend"),
-        ],
-        1,
-        memory_extend_jet,
-    ),
+    //(
+    //    &[
+    //        K_138,
+    //        Left(b"one"),
+    //        Left(b"two"),
+    //        Left(b"tri"),
+    //        Left(b"qua"),
+    //        Left(b"pen"),
+    //        Left(b"memory-table"),
+    //        Left(b"funcs"),
+    //        Left(b"extend"),
+    //    ],
+    //    1,
+    //    memory_extend_jet,
+    //),
     (
         &[
             K_138,
@@ -194,6 +194,36 @@ pub const XTRA_JETS: &[HotEntry] = &[
 ];
 
 pub const EXTENSION_FIELD_JETS: &[HotEntry] = &[
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"bp-ntt"),
+        ],
+        1,
+        bp_ntt_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"bp-fft"),
+        ],
+        1,
+        bp_fft_jet,
+    ),
     (
         &[
             K_138,
@@ -415,34 +445,6 @@ pub const BASE_FIELD_JETS: &[HotEntry] = &[
         ],
         1,
         bpow_jet,
-    ),
-    (
-        &[
-            K_138,
-            Left(b"one"),
-            Left(b"two"),
-            Left(b"tri"),
-            Left(b"qua"),
-            Left(b"pen"),
-            Left(b"zeke"),
-            Left(b"bp-ntt"),
-        ],
-        1,
-        bp_ntt_jet,
-    ),
-    (
-        &[
-            K_138,
-            Left(b"one"),
-            Left(b"two"),
-            Left(b"tri"),
-            Left(b"qua"),
-            Left(b"pen"),
-            Left(b"zeke"),
-            Left(b"bp-fft"),
-        ],
-        1,
-        bp_fft_jet,
     ),
 ];
 
