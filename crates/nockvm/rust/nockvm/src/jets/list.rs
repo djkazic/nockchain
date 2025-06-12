@@ -97,12 +97,32 @@ pub fn jet_zing(context: &mut Context, subject: Noun) -> Result {
     util::zing(stack, list)
 }
 
+pub fn jet_reap(context: &mut Context, subject: Noun) -> Result {
+    let sam = slot(subject, 6)?;
+    let a_noun = slot(sam, 2)?;
+    let b_noun = slot(sam, 3)?;
+
+    let a = a_noun.as_atom()?.as_u64()?;
+    util::reap(&mut context.stack, a, b_noun)
+}
+
+pub fn jet_levy(context: &mut Context, subject: Noun) -> Result {
+    let sam = slot(subject, 6)?;
+    let a_noun = slot(sam, 2)?;
+    let b_noun = slot(sam, 3)?;
+
+    util::levy(context, a_noun, b_noun)
+}
+
+
+
 pub mod util {
-    use crate::jets::util::BAIL_EXIT;
+    use crate::jets::util::{slam, BAIL_EXIT};
     use crate::jets::{JetErr, Result};
     use crate::mem::NockStack;
-    use crate::noun::{Cell, Noun, D, T};
+    use crate::noun::{Cell, Noun, D, NO, T, YES};
     use std::result;
+    use crate::interpreter::Context;
 
     /// Reverse order of list
     pub fn flop(stack: &mut NockStack, noun: Noun) -> Result {
@@ -235,6 +255,32 @@ pub mod util {
 
             *dest = D(0);
             Ok(res)
+        }
+    }
+
+    pub fn reap(stack: &mut NockStack, a: u64, b_noun: Noun ) -> Result {
+        let mut tsil = D(0);
+        let mut a_mut = a;
+        loop {
+            if a_mut == 0 { break; }
+            tsil = T(stack, &[b_noun, tsil]);
+            a_mut = a_mut - 1;
+        }
+        Ok(tsil)
+    }
+
+    pub fn levy(context: &mut Context, a_noun: Noun, b_noun: Noun) -> Result {
+        let mut list = a_noun;
+        loop {
+            if unsafe { list.raw_equals(&D(0)) } {
+                return Ok(YES);
+            }
+            let cell = list.as_cell()?;
+            let b_res = slam(context, b_noun, cell.head())?;
+            if unsafe { b_res.raw_equals(&NO) } {
+                return Ok(NO);
+            }
+            list = cell.tail();
         }
     }
 }
@@ -376,5 +422,28 @@ mod tests {
 
         let sam4 = T(&mut c.stack, &[list_1, list_2]);
         assert_jet(c, jet_weld, sam4, list_3);
+    }
+
+    #[test]
+    fn test_reap() {
+        let c = &mut init_context();
+
+        assert_jet_err(c, jet_reap, D(0), BAIL_EXIT);
+
+        let sam = T(&mut c.stack, &[D(0), D(3)]);
+        assert_jet(c, jet_reap, sam, D(0));
+
+        let sam = T(&mut c.stack, &[D(1), D(3)]);
+        let res = T(&mut c.stack, &[D(3), D(0)]);
+        assert_jet(c, jet_reap, sam, res);
+
+        let sam = T(&mut c.stack, &[D(2), D(3)]);
+        let res = T(&mut c.stack, &[D(3), D(3), D(0)]);
+        assert_jet(c, jet_reap, sam, res);
+
+        let c34 = T(&mut c.stack, &[D(3), D(4)]);
+        let sam = T(&mut c.stack, &[D(2), c34]);
+        let res = T(&mut c.stack, &[c34, c34, D(0)]);
+        assert_jet(c, jet_reap, sam, res);
     }
 }
