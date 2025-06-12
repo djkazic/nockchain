@@ -538,7 +538,7 @@
         ~>  %slog.[3 leaf+"tx-id-already-seen"]
         :_  k
         [%seen %tx id.raw]~
-      ?:  (based:raw-tx:t raw)
+      ?.  (based:raw-tx:t raw)
         :_  k
         [(liar-effect wir %raw-tx-not-based)]~
       ::
