@@ -886,7 +886,7 @@
 --
 ~%  %pow  ..fock  ~
 |%
-++  pow-len  `@`1
+++  pow-len  `@`64
 ::
 ::  +puzzle-nock: powork puzzle
 ::
