@@ -109,6 +109,31 @@ fn bex(arg: usize) -> usize {
     1 << arg
 }
 
+pub fn snag_as_bpoly_jet(context: &mut Context, subject: Noun) -> Result<Noun, JetErr> {
+    let stack = &mut context.stack;
+    let door = slot(subject, 7)?;
+    let mary_noun = slot(door, 6)?;
+    let i = slot(subject, 6)?.as_direct()?.data() as usize;
+
+    snag_as_bpoly(stack, mary_noun, i)
+}
+
+fn snag_as_bpoly(stack: &mut NockStack, mary_noun: Noun, i: usize) -> Result<Noun, JetErr> {
+    let mary_cell = mary_noun.as_cell()?;
+    let ma_step = mary_cell.head().as_atom()?.as_u32()?;
+
+    let dat = snag_one(stack, mary_noun, i)?;
+
+    if ma_step == 1 {
+        let step = bex(6) * ma_step as usize;
+        let high_bit = lsh(stack, 0, step, D(1).as_atom()?)?;
+        let res_add = add(stack, high_bit.as_atom()?, dat.as_atom()?).as_noun();
+        return Ok(T(stack, &[D(ma_step as u64), res_add]));
+    }
+
+    Ok(T(stack, &[D(ma_step as u64), dat]))
+}
+
 pub fn mary_weld_jet(context: &mut Context, subject: Noun) -> Result<Noun, JetErr> {
     let door = slot(subject, 7)?;
     let ma = slot(door, 6)?;

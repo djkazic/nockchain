@@ -220,6 +220,21 @@ pub const XTRA_JETS: &[HotEntry] = &[
         1,
         snag_one_jet,
     ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ave"),
+            Left(b"snag-as-bpoly"),
+        ],
+        1,
+        snag_as_bpoly_jet,
+    ),
 ];
 
 pub const EXTENSION_FIELD_JETS: &[HotEntry] = &[
