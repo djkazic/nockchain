@@ -7,6 +7,7 @@ use crate::jets::cheetah_jets::*;
 use crate::jets::compute_table_jets::*;
 use crate::jets::crypto_jets::*;
 use crate::jets::fext_jets::*;
+use crate::jets::fp_jets::*;
 use crate::jets::mary_jets::*;
 use crate::jets::mega_jets::*;
 use crate::jets::memory_table_jets::*;
@@ -17,6 +18,7 @@ pub fn produce_prover_hot_state() -> Vec<HotEntry> {
     let mut jets: Vec<HotEntry> = Vec::new();
     jets.extend(BASE_FIELD_JETS);
     jets.extend(BASE_POLY_JETS);
+    jets.extend(FIELD_POLY_JETS);
     jets.extend(CURVE_JETS);
     jets.extend(ZTD_JETS);
     jets.extend(KEYGEN_JETS);
@@ -560,6 +562,159 @@ pub const BASE_POLY_JETS: &[HotEntry] = &[
         ],
         1,
         bpdvr_jet,
+    ),
+];
+
+pub const FIELD_POLY_JETS: &[HotEntry] = &[
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fpadd"),
+        ],
+        1,
+        fp_add_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fpneg"),
+        ],
+        1,
+        fp_neg_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fpsub"),
+        ],
+        1,
+        fp_sub_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fpscal"),
+        ],
+        1,
+        fp_scal_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fpmul"),
+        ],
+        1,
+        fp_mul_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fpeval"),
+        ],
+        1,
+        fp_eval_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fp-fft"),
+        ],
+        1,
+        fp_fft_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fp-ifft"),
+        ],
+        1,
+        fp_ifft_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"interpolate"),
+        ],
+        1,
+        interpolate_jet,
+    ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"ext-field"),
+            Left(b"fpcompose"),
+        ],
+        1,
+        fpcompose_jet,
     ),
 ];
 
