@@ -1,8 +1,11 @@
 use nockvm::interpreter::Context;
-use nockvm::jets::util::slot;
+use nockvm::jets::util::{bite_to_word, chop, slot};
 use nockvm::jets::JetErr;
-use nockvm::noun::{IndirectAtom, Noun};
-use tracing::debug;
+use nockvm::noun::{Atom, IndirectAtom, Noun, D, T};
+use nockvm::jets::bits::util::lsh;
+use nockvm::jets::math::util::add;
+use nockvm::mem::NockStack;
+use tracing::{debug, info, error};
 
 use crate::form::mary::*;
 use crate::form::math::mary::*;
@@ -30,6 +33,33 @@ pub fn mary_swag_jet(context: &mut Context, subject: Noun) -> Result<Noun, JetEr
         .copy_from_slice(&mary.dat[(i * step)..(i + j) * step]);
 
     let res_cell = finalize_mary(&mut context.stack, step, j, res);
+    Ok(res_cell)
+}
+
+pub fn transpose_bpolys_jet(context: &mut Context, subject: Noun) -> Result<Noun, JetErr> {
+    let sam = slot(subject, 6)?;
+    let bpolys = MarySlice::try_from(sam).expect("cannot convert bpolys arg");
+    transpose_bpolys(context, bpolys)
+}
+
+fn transpose_bpolys(context: &mut Context, bpolys: MarySlice) -> Result<Noun, JetErr> {
+    let offset = 1;
+
+    let (res, mut res_poly): (IndirectAtom, MarySliceMut) = new_handle_mut_mary(
+        &mut context.stack,
+        bpolys.len as usize * offset,
+        bpolys.step as usize / offset,
+    );
+
+    mary_transpose(bpolys, offset, &mut res_poly);
+
+    let res_cell = finalize_mary(
+        &mut context.stack,
+        res_poly.step as usize,
+        res_poly.len as usize,
+        res,
+    );
+
     Ok(res_cell)
 }
 

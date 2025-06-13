@@ -191,6 +191,20 @@ pub const XTRA_JETS: &[HotEntry] = &[
         1,
         mp_substitute_mega_jet,
     ),
+    (
+        &[
+            K_138,
+            Left(b"one"),
+            Left(b"two"),
+            Left(b"tri"),
+            Left(b"qua"),
+            Left(b"pen"),
+            Left(b"zeke"),
+            Left(b"transpose-bpolys"),
+        ],
+        1,
+        transpose_bpolys_jet,
+    ),
 ];
 
 pub const EXTENSION_FIELD_JETS: &[HotEntry] = &[
