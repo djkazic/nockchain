@@ -785,6 +785,16 @@ pub const URBIT_HOT_STATE: &[HotEntry] = &[
         1,
         jet_sivc_de,
     ),
+    (
+        &[K_138, Left(b"one"), Left(b"two"), Left(b"levy")],
+        1,
+        jet_levy,
+    ),
+    (
+        &[K_138, Left(b"one"), Left(b"two"), Left(b"reap")],
+        1,
+        jet_reap,
+    ),
 ];
 
 #[derive(Copy, Clone)]

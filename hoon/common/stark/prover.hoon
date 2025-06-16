@@ -57,7 +57,7 @@
   =.  proof  (~(push proof-stream proof) [%puzzle header nonce pow-len prod])
   ::
   ::  build tables
-  ::~&  %building-tables
+  ~&  %building-tables
   =/  tables=(list table-dat)
     (build-table-dats return)
   ::
@@ -126,7 +126,7 @@
       ::!=(step.p.ext ext-width.p.table)
     ::~&  %widths-mismatch
     ::~|("prove: mismatch between table ext widths and actual ext widths" !!)
-  ::~&  %ext-cols
+  ~&  %ext-cols
   ::
   ::  convert the ext columns to marys
   ::
@@ -153,7 +153,7 @@
   ::  build mega-extension columns
   =/  table-mega-exts=(list table-mary) 
     (build-mega-extend tables challenges return)
-  ::~&  %tables-built
+  ~&  %tables-built
   =.  tables
     %+  turn  (zip-up tables table-mega-exts)
     |=  [t=table-dat mega-ext=table-mary]
@@ -208,7 +208,7 @@
   ::    |=  [i=@ t=table-dat]
   ::    %-  (test:zkvm-debug p.t s f)
   ::    [challenges (~(got by dyn-map) i) r.t]
-  ::~&  %passed-tests
+  ~&  %passed-tests
   ::
   =/  num-extra-constraints=@
     %+  roll  (range num-tables)
@@ -244,7 +244,7 @@
     |=  =table-mary
     (transpose-bpolys p.table-mary)
   ::
-  ::~&  %composing-trace-polys
+  ~&  %composing-trace-polys
   ::  each mary is a list of a table's columns, interpolated to polys
   =/  trace-polys
     %+  turn  (zip-up polys.base (zip-up polys.ext polys.mega-ext))
@@ -273,7 +273,7 @@
   ::
   ::  Compute trace and tworow-trace polynomials in eval form over a 4*d root of unity
   ::  (where d is the lowest power of 2 greater than the max degree of the constraints)
-  ::~&  %extending-trace-polys
+  ~&  %extending-trace-polys
   ::
   ::  TODO: Save these variables in the preprocess step
   =/  max-constraint-degree  (get-max-constraint-degree cd.pre)
@@ -316,7 +316,7 @@
       ==
     :_  (add num (mul 2 num-extra-constraints))
     [[i (~(swag bop extra-comp-weights) num (mul 2 num-extra-constraints))] acc]
-  ::~&  %computing-extra-composition-poly
+  ~&  %computing-extra-composition-poly
   =/  extra-composition-poly=bpoly
     %-  compute-composition-poly
     :*  omicrons-bpoly
@@ -335,7 +335,7 @@
   =^  extra-comp-eval-point  rng  $:felt:rng
   ::
   ::  compute extra trace evals
-  ::~&  %evaluating-trace-at-new-comp-eval-point
+  ~&  %evaluating-trace-at-new-comp-eval-point
   =/  extra-trace-evaluations=fpoly
     %-  init-fpoly
     %-  zing
@@ -391,7 +391,7 @@
     :_  (add num (mul 2 num-constraints))
     [[i (~(swag bop comp-weights) num (mul 2 num-constraints))] acc]
   ::
-  ::~&  %computing-composition-poly
+  ~&  %computing-composition-poly
   =/  composition-poly=bpoly
     %-  compute-composition-poly
     :*  omicrons-bpoly
@@ -408,14 +408,14 @@
   ::  decompose composition polynomial into one polynomial for each degree of the
   ::  constraints. If the max degree of the constraints is D, then this will produce
   ::  D polynomials each of degree table-height.
-  ::~&  %decomposing-composition-poly
+  ~&  %decomposing-composition-poly
   =/  num-composition-pieces  (get-max-constraint-degree cd.pre)
   ::
   =/  composition-pieces=(list bpoly)
     (bp-decompose composition-poly num-composition-pieces)
   ::
   ::  turn composition pieces into codewords
-  ::~&  %computing-composition-codewords
+  ~&  %computing-composition-codewords
   =/  composition-codewords=mary
     %-  zing-bpolys
     %+  turn  composition-pieces
@@ -445,7 +445,7 @@
       [deep-candidate rng]
     =^  felt  rng  $:felt:rng
     $(deep-candidate felt)
-  ::~&  %evaluating-trace-at-deep-challenge
+  ~&  %evaluating-trace-at-deep-challenge
   ::
   ::  trace-evaluations: list of evaluations of interpolated column polys and
   ::  shifted column polys at deep point, grouped in order by tables
@@ -459,7 +459,7 @@
     =/  b=bpoly  (~(snag-as-bpoly ave polys) i)
     (bpeval-lift b deep-challenge)
   ::
-  ::~&  %evaluating-pieces-at-deep-challenge
+  ~&  %evaluating-pieces-at-deep-challenge
   =/  composition-pieces-fpoly  (turn composition-pieces bpoly-to-fpoly)
   =/  composition-piece-evaluations=fpoly
     =/  c  (fpow deep-challenge num-composition-pieces)
@@ -483,7 +483,7 @@
       (add (mul 4 total-cols) max-constraint-degree)
     [(init-fpoly felt-list) rng]
   =/  all-evals  (~(weld fop trace-evaluations) extra-trace-evaluations)
-  ::~&  %computing-deep-poly
+  ~&  %computing-deep-poly
   =/  deep-poly=fpoly
     %-  compute-deep
     :*  trace-polys
@@ -497,7 +497,7 @@
     ==
   ::
   ::  create DEEP codeword and push to proof
-  ::~&  %computing-deep-codeword
+  ~&  %computing-deep-codeword
   =/  deep-codeword=fpoly
     (coseword deep-poly (lift g) fri-domain-len)
   ::
@@ -505,7 +505,7 @@
     (prove:fri:clc deep-codeword proof)
   ::
   ::
-  ::~&  %opening-codewords
+  ~&  %opening-codewords
   =.  proof
     %^  zip-roll  (range num-spot-checks)  fri-indices
     |=  [[i=@ idx=@] proof=_proof]
@@ -548,7 +548,7 @@
     %-  ~(push proof-stream proof)
     m-pathbf+[(tail elem) path.opening]
   ::
-  ::~&  %finished-proof
+  ~&  %finished-proof
   ?-  version
     %0  [%& %0 objects.proof ~ 0]
     %1  [%& %1 objects.proof ~ 0]
